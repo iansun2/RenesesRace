@@ -4,7 +4,7 @@ DIR="$( cd "$( dirname "$0" )" && pwd )"
 echo "DIR: ${DIR}"
 
 # docker pull arm64v8/ros:humble-perception
-export WAYLAND_DISPLAY=wayland-1
+export WAYLAND_DISPLAY=wayland-0
 
 docker run -it -d --name ros2 \
     --privileged \
