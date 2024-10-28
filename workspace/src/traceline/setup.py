@@ -20,7 +20,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'traceline_node = traceline.traceline:main',
+            'traceline_r_node = traceline.tracelineR:main',
+            'traceline_l_node = traceline.tracelineL:main',
+            'traceline_new_node = traceline.tracelineNew:main'
         ],
     },
 )

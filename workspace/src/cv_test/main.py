@@ -1,8 +1,15 @@
 import cv2
 import numpy as np
 
+print(f"CV2 Version {cv2.__version__}")
+print(f"CV2 Path {cv2.__file__}")
+
 cap = cv2.VideoCapture(0)
 assert cap.isOpened(), f'Failed to open'
-img = np.random.rand(200,300)
-cv2.imshow("test", img)
-cv2.waitKey(10000)
+print("open finish")
+
+while 1:
+    ret, frame = cap.read()
+    if ret:
+        cv2.imshow("img", frame)
+    cv2.waitKey(1)

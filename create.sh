@@ -17,5 +17,7 @@ docker run -it -d --name ros2 \
     -v ${DIR}/user_data/pip-packages:/usr/local/lib/python3.10/dist-packages \
     ros2_dev
 
-    # -v /usr/lib64:/usr/lib64 \
-    # -p 8080:80 \
+
+docker run -it -d --name redis \
+    --net=host \
+    redis:7.4.1
