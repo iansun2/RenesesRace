@@ -15,6 +15,8 @@ docker run -it -d --name ros2 \
 	-e QT_QPA_PLATFORM=wayland \
     -v ${DIR}/workspace:/root/workspace \
     -v ${DIR}/user_data/pip-packages:/usr/local/lib/python3.10/dist-packages \
+    -v ${DIR}/user_data/local:/root/.local \
+    -v ${DIR}/config/code-server-config.yaml:/root/.config/code-server/config.yaml:ro \
     ros2_dev
 
 
