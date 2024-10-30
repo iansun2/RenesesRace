@@ -43,7 +43,6 @@ class Motor2Wheel(UsbDevice):
     def __init__(self):
         pass
 
-
     def motor_init(self, m1_id=1, m2_id=2):
         # Save ID
         self.m1_id = m1_id
@@ -95,25 +94,34 @@ class MotorNode(Node):
             '/motor',
             self.set_target_callback,
             10)
+        # Car Struct
+        self.wheel_radius = 0.3 # meters
+        self.wheel_dist = 0.2 # meters
+        # Motor
+        self.motor = Motor2Wheel()
+        self.motor.usb_init(usb='/dev/ttyUSB0')
+        self.motor.motor_init(m1_id=1, m2_id=2)
+        self.motor.ping()
+        self.motor.set_speed(0, 0)
 
     def set_target_callback(self, msg):
-        img = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
-        # cv2.imshow("receive", img)
-        L_min, debug_img = self.get_trace_value(img)
-        self.get_logger().info(f"L: {L_min}")
-        cv2.imshow("traceline L", debug_img)
-        cv2.waitKey(1)
+        linear = msg.linear # m/s
+        angular = msg.angular # rad/s
+        self.get_logger().info(f"twist target: linear-> {linear}, angular-> {angular}")
+        speed_left = linear - (self.wheel_dist / 2) * angular
+        speed_right = linear + (self.wheel_dist / 2) * angular
+        output_left = speed_left / self.wheel_radius
+        output_right = speed_right / self.wheel_radius
+        self.get_logger().info(f"output target: left: {output_left}, right: {output_right}")
+        self.motor.set_speed(output_left, output_right)
 
 
+def main(args=None):
+    rclpy.init(args=args)
+    motor_node = MotorNode()
+    rclpy.spin(motor_node)
+    rclpy.shutdown()
 
-def init_motor() -> MOTOR_2_WHEEL_MODE:
-    motor = MOTOR_2_WHEEL_MODE()
-    #motor.usb_initialization(usb='/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT4TFQFM-if00-port0', baudrate=1000000, protocol_version=2.0)
-    motor.usb_initialization(usb='/dev/serial/by-id/usb-ROBOTIS_OpenCR_Virtual_ComPort_in_FS_Mode_FFFFFFFEFFFF-if00')
-    motor.motor_initialization(m1_id=1, m2_id=2)
-    motor.ping()
-    motor.setSpeed(0, 0)
-    return motor
 
 
 

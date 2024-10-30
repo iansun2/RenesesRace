@@ -20,6 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'motor_drive_node = motor.motor:main',
+            'find_motor = motor.find_motor:main'
         ],
     },
 )
