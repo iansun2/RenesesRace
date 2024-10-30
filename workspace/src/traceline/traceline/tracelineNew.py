@@ -8,6 +8,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
 from cv_bridge import CvBridge
+from geometry_msgs.msg import Twist
 
 
 L_H_low = 20
@@ -41,12 +42,17 @@ class TraceLineNode(Node):
             self.receive_image_callback,
             10)
         self.bridge = CvBridge()
+        self.publisher_ = self.create_publisher(Twist, '/motor', 10)
 
     def receive_image_callback(self, msg):
         img = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         # cv2.imshow("receive", img)
-        L, R, debug_img = self.get_trace_value(img)
-        self.get_logger().info(f"L: {L}, R: {R}")
+        output, L, R, debug_img = self.get_trace_value(img)
+        self.get_logger().info(f"L: {L}, R: {R} output: {output}")
+        msg = Twist()
+        msg.linear.z = 50.0 / 10.0
+        msg.angular.z = output / 10.0
+        self.publisher_.publish(msg)
         # cv2.imshow("traceline", debug_img)
         cv2.waitKey(1)
 
@@ -175,7 +181,10 @@ class TraceLineNode(Node):
         L = avg_L[0] * 0.7 + avg_L[1] * 0.4 + avg_L[2] * 0.1
         R = avg_R[0] * 0.7 + avg_R[1] * 0.4 + avg_R[2] * 0.1
 
-        return L, R, debug_frame
+        output = (L + R) / 2
+        output -= h_middle
+
+        return output, L, R, debug_frame
 
 
 

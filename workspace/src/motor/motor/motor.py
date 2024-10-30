@@ -95,7 +95,7 @@ class MotorNode(Node):
             self.set_target_callback,
             10)
         # Car Struct
-        self.wheel_radius = 0.3 # meters
+        self.wheel_radius = 0.05 # meters
         self.wheel_dist = 0.2 # meters
         # Motor
         self.motor = Motor2Wheel()
@@ -105,8 +105,8 @@ class MotorNode(Node):
         self.motor.set_speed(0, 0)
 
     def set_target_callback(self, msg):
-        linear = msg.linear # m/s
-        angular = msg.angular # rad/s
+        linear = msg.linear.z # m/s
+        angular = msg.angular.z # rad/s
         self.get_logger().info(f"twist target: linear-> {linear}, angular-> {angular}")
         speed_left = linear - (self.wheel_dist / 2) * angular
         speed_right = linear + (self.wheel_dist / 2) * angular
