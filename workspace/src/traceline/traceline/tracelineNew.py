@@ -13,9 +13,9 @@ from geometry_msgs.msg import Twist
 
 L_H_low = 20
 L_H_high = 40
-L_S_low = 15
-L_S_high = 150
-L_V_low = 120
+L_S_low = 20
+L_S_high = 200
+L_V_low = 60
 L_V_high = 255
 
 lower_L = np.array([L_H_low,L_S_low,L_V_low])
@@ -24,8 +24,8 @@ upper_L = np.array([L_H_high,L_S_high,L_V_high])
 R_H_low = 0
 R_H_high = 180
 R_S_low = 0
-R_S_high =10
-R_V_low = 180
+R_S_high = 50
+R_V_low = 100
 R_V_high = 255
 
 lower_R = np.array([R_H_low,R_S_low,R_V_low])
@@ -47,11 +47,11 @@ class TraceLineNode(Node):
     def receive_image_callback(self, msg):
         img = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         # cv2.imshow("receive", img)
-        output, L, R, debug_img = self.get_trace_value(img)
-        self.get_logger().info(f"L: {L}, R: {R} output: {output}")
+        output_sum, output, debug_img = self.get_trace_value(img)
+        self.get_logger().info(f"sum: {output_sum}, section: {output}")
         msg = Twist()
-        msg.linear.z = 50.0 / 10.0
-        msg.angular.z = output / 10.0
+        msg.linear.z = 70.0 / 10.0
+        msg.angular.z = output_sum / 2.0
         self.publisher_.publish(msg)
         # cv2.imshow("traceline", debug_img)
         cv2.waitKey(1)
@@ -59,8 +59,8 @@ class TraceLineNode(Node):
 
     def get_trace_value(self, frame : cv2.UMat):
         rsize = frame.shape
-        frame = frame[300:rsize[0]-50, 200:rsize[1]-200, :]
-        frame = cv2.resize(frame, (320, 240))
+        frame = frame[200:rsize[0]-100, 100:rsize[1]-100, :]
+        frame = cv2.resize(frame, (320, 200))
         
         fsize = frame.shape
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -119,28 +119,28 @@ class TraceLineNode(Node):
         df = df.loc[df['z_score'].abs() <= 2]
         road_edge_point_L = df[['x', 'y']].to_numpy()
         
-        
         raw_R = np.array(road_edge_point_R)
         df = pd.DataFrame({'x':raw_R[:, 0], 'y':raw_R[:,1]})
         df['z_score'] = stats.zscore(df['x'])
         df = df.loc[df['z_score'].abs() <= 2]
         road_edge_point_R = df[['x', 'y']].to_numpy()
         
-        
         avg_L = [0] * 3
         avg_L_cnt = [0] * 3
         avg_R = [0] * 3
         avg_R_cnt = [0] * 3
+
+        section = [150, 100, 50]
         
         for p in road_edge_point_L:
-            cv2.circle(debug_frame, p, 2, (255, 0, 0), 2)
-            if p[1] > 180:
+            # cv2.circle(debug_frame, p, 2, (255, 0, 0), 2)
+            if p[1] > section[0]:
                 avg_L[0] += p[0]
                 avg_L_cnt[0] += 1
-            elif p[1] > 120:
+            elif p[1] > section[1]:
                 avg_L[1] += p[0]
                 avg_L_cnt[1] += 1
-            elif p[1] > 60:
+            elif p[1] > section[2]:
                 avg_L[2] += p[0]
                 avg_L_cnt[2] += 1
         
@@ -150,14 +150,14 @@ class TraceLineNode(Node):
         # print(avg_L)
         
         for p in road_edge_point_R:
-            cv2.circle(debug_frame, p, 2, (0, 255, 0), 2)
-            if p[1] > 180:
+            # cv2.circle(debug_frame, p, 2, (0, 255, 0), 2)
+            if p[1] > section[0]:
                 avg_R[0] += p[0]
                 avg_R_cnt[0] += 1
-            elif p[1] > 120:
+            elif p[1] > section[1]:
                 avg_R[1] += p[0]
                 avg_R_cnt[1] += 1
-            elif p[1] > 60:
+            elif p[1] > section[2]:
                 avg_R[2] += p[0]
                 avg_R_cnt[2] += 1
         
@@ -174,17 +174,13 @@ class TraceLineNode(Node):
         for idx in range(len(avg_L)):
             avg.append(int((avg_L[idx] + avg_R[idx]) / 2))
         
-        cv2.circle(debug_frame, (avg[0], 210), 2, (255, 255, 255), 2)
-        cv2.circle(debug_frame, (avg[1], 150), 2, (255, 255, 255), 2)
-        cv2.circle(debug_frame, (avg[2], 90), 2, (255, 255, 255), 2)
+        # cv2.circle(debug_frame, (avg[0], section[0] + 25), 2, (255, 255, 255), 2)
+        # cv2.circle(debug_frame, (avg[1], section[1] + 25), 2, (255, 255, 255), 2)
+        # cv2.circle(debug_frame, (avg[2], section[2] + 25), 2, (255, 255, 255), 2)
 
-        L = avg_L[0] * 0.7 + avg_L[1] * 0.4 + avg_L[2] * 0.1
-        R = avg_R[0] * 0.7 + avg_R[1] * 0.4 + avg_R[2] * 0.1
-
-        output = (L + R) / 2
-        output -= h_middle
-
-        return output, L, R, debug_frame
+        output = h_middle - (np.array(avg_L) + np.array(avg_R)) / 2
+        output_sum = output[0] * 0.2 + output[1] * 0.4 + output[2] * 0.8
+        return output_sum, output, debug_frame
 
 
 

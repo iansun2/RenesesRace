@@ -5,6 +5,8 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 
+motor_obj = None 
+
 
 class UsbDevice:
     def __init__(self):
@@ -88,6 +90,7 @@ class Motor2Wheel(UsbDevice):
 
 class MotorNode(Node):
     def __init__(self):
+        global motor_obj
         super().__init__('motor_node')
         self.subscription = self.create_subscription(
             Twist,
@@ -99,10 +102,17 @@ class MotorNode(Node):
         self.wheel_dist = 0.2 # meters
         # Motor
         self.motor = Motor2Wheel()
+        motor_obj = self.motor
         self.motor.usb_init(usb='/dev/ttyUSB0')
         self.motor.motor_init(m1_id=1, m2_id=2)
         self.motor.ping()
         self.motor.set_speed(0, 0)
+        # self.motor.set_speed(50, 0)
+        # time.sleep(1)
+        # self.motor.set_speed(0, 50)
+        # time.sleep(1)
+        self.motor.set_speed(0, 0)
+        time.sleep(3)
 
     def set_target_callback(self, msg):
         linear = msg.linear.z # m/s
@@ -119,7 +129,10 @@ class MotorNode(Node):
 def main(args=None):
     rclpy.init(args=args)
     motor_node = MotorNode()
-    rclpy.spin(motor_node)
+    try:
+        rclpy.spin(motor_node)
+    except:
+        motor_obj.set_speed(0, 0)
     rclpy.shutdown()
 
 

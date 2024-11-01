@@ -29,10 +29,18 @@ class USBCameraRGBNode(Node):
         self.fps = 0
         self.last_count_fps = time.time()
         # cap
+        self.frame_id = 0
         self.get_logger().info("init cap")
         self.get_logger().info(f"open cap: {self.src}")
-        self.cap = cv2.VideoCapture(self.src)
-        self.frame_id = 0
+        self.cap = cv2.VideoCapture()
+        self.cap.open(self.src, apiPreference=cv2.CAP_V4L2)
+        self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3) # auto expos
+        time.sleep(3)
+        self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # manual expos
+        # self.cap.set(cv2.CAP_PROP_BRIGHTNESS, 1)
+        self.cap.set(cv2.CAP_PROP_EXPOSURE, 80)
+        # self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        # self.cap.set(cv2.CAP_PROP_SATURATION, 0)
         if not self.cap.isOpened():
             self.get_logger().error(f"Could not open video source {self.src}")
             rclpy.shutdown()
