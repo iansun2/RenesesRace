@@ -32,7 +32,6 @@ class UsbDevice:
         else:
             print("Failed to change the baudrate")
             print("Press any key to terminate...")
-            getch()
             quit()
 
     def close(self):
@@ -139,7 +138,7 @@ def main(args=None):
 
 
 if __name__ == '__main__':
-    motor = MOTOR_2_WHEEL_MODE()
+    motor = Motor2Wheel()
     motor.usb_initialization(usb='/dev/ttyACM0')
     motor.motor_initialization(m1_id=1, m2_id=2)
     motor.ping()
