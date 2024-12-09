@@ -21,12 +21,11 @@ class AvoidanceNode(Node):
         # start avoidance distance
         self.avoidance_distance = 0.4
         self.distance_kp = 0.1
-        self.final_gain = 1.0
         ''' formula
         avoidance_fov_factor = (1 - avoidance_angle_weight_min) / avoidance_fov
         point_weight = 1 - avoidance_fov_factor * (point_angle - head_position)
         weighted_sum = sum( distance_kp * (avoidance_distance - point_distance) * point_weight )
-        final_output = final_gain * weighted_sum
+        final_output = weighted_sum
         '''
         ''' pubsub '''
         self.pub_mot = self.create_publisher(Twist, '/motor_sup', 1)
@@ -66,11 +65,12 @@ class AvoidanceNode(Node):
                 point_weight = -1 - point_weight
             weighted_value[-1] = self.distance_kp * (self.avoidance_distance - point_distance) * point_weight
             weighted_sum += weighted_value[-1]
+            ## for debug
             weighted_value[-1] = abs(weighted_value[-1]) * 30
             # weighted_value[-1] = 1 + point_weight
             # print(f"pw: {point_weight}")
-        final_output = self.final_gain * weighted_sum
-        self.get_logger().info(f"final output: {weighted_sum}")
+        final_output = weighted_sum
+        self.get_logger().info(f"final output: {final_output}")
         # for debug
         msg.ranges = weighted_value
         self.pub_debug.publish(msg)

@@ -1,0 +1,119 @@
+{
+    "TRACE_CFG": {
+        "en"        : true,
+        "mode"      : "dual",
+        "mix_TMB"   : [0.5, 0.3, 0.2],
+        "ref_LR"    : [0.33, 0.66],
+        "pid"       : [5, 0, 0],
+        "speed"     : 60
+    },
+    "AVOIDANCE_CFG": {
+        "en"            : true,
+        "fov"           : 180,
+        "weight_min"    : 0.1,
+        "distance"      : 0.4,
+        "distance_kp"   : 0.1
+    },
+
+    "to_fork_cfg": {
+        "trace": {
+            "en"        : true,
+            "mode"      : "dual",
+            "mix_TMB"   : [0.5, 0.3, 0.2],
+            "pid"       : [5, 0, 0],
+            "speed"     : 60
+        },
+        "avoidance": {
+            "en"    : false
+        }
+    },
+    "fork_left_cfg": {
+        "trace": {
+            "en"        : true,
+            "mode"      : "left",
+            "mix_TMB"   : [0.5, 0.3, 0.2],
+            "ref"       : 0.33,
+            "pid"       : [5, 0, 0],
+            "speed"     : 60
+        },
+        "avoidance": {
+            "en"    : false
+        }
+    },
+    "fork_right_cfg": {
+        "trace": {
+            "en"        : true,
+            "mode"      : "right",
+            "mix_TMB"   : [0.5, 0.3, 0.2],
+            "ref"       : 0.66,
+            "pid"       : [5, 0, 0],
+            "speed"     : 60
+        },
+        "avoidance": {
+            "en"    : false
+        }
+    },
+
+    "to_avoidance_cfg": {
+        "trace": {
+            "en"        : true,
+            "mode"      : "dual",
+            "mix_TMB"   : [0.5, 0.3, 0.2],
+            "pid"       : [5, 0, 0],
+            "speed"     : 60
+        },
+        "avoidance": {
+            "en"    : false
+        }
+    },
+    "avoidance_cfg": {
+        "trace": {
+            "en"        : true,
+            "mode"      : "dual",
+            "mix_TMB"   : [0.5, 0.3, 0.2],
+            "pid"       : [5, 0, 0],
+            "speed"     : 60
+        },
+        "avoidance": {
+            "en"            : true,
+            "fov"           : 180,
+            "weight_min"    : 0.1,
+            "distance"      : 0.4,
+            "distance_kp"   : 0.1
+        }
+    },
+
+    "to_parking_cfg": {
+        "trace": {
+            "en"        : true,
+            "mode"      : "dual",
+            "mix_TMB"   : [0.5, 0.3, 0.2],
+            "pid"       : [5, 0, 0],
+            "speed"     : 60
+        },
+        "avoidance": {
+            "en"    : false
+        }
+    },
+    "approach_parking_cfg": {
+        "trace": {
+            "en"        : true,
+            "mode"      : "left",
+            "mix_TMB"   : [0.5, 0.3, 0.2],
+            "ref"       : 0.33,
+            "pid"       : [5, 0, 0],
+            "speed"     : 60
+        },
+        "avoidance": {
+            "en"    : false
+        }
+    },
+    "parking_cfg": {
+        "trace": {
+            "en"    : false
+        },
+        "avoidance": {
+            "en"    : false
+        }
+    }
+}
