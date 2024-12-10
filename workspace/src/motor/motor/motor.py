@@ -91,15 +91,29 @@ class MotorNode(Node):
     def __init__(self):
         global motor_obj
         super().__init__('motor_node')
-        self.subscription = self.create_subscription(
+        self.sub_motor_main = self.create_subscription(
             Twist,
-            '/motor',
-            self.set_target_callback,
-            10)
-        # Car Struct
-        self.wheel_radius = 0.05 # meters
-        self.wheel_dist = 0.2 # meters
-        # Motor
+            '/motor/main',
+            self.receive_motor_main_callback,
+            1)
+        self.sub_motor_aux = self.create_subscription(
+            Twist,
+            '/motor/aux',
+            self.receive_motor_aux_callback,
+            1)
+        self.sub_motor_pos = self.create_subscription(
+            Twist,
+            '/motor/pos',
+            self.receive_motor_pos_callback,
+            5)
+        ''' Car Struct '''
+        self.wheel_radius = 50 # mm
+        self.wheel_dist = 200 # mm
+        ''' Variable '''
+        self.main_linear = 0
+        self.main_angular = 0
+        self.aux_angular = 0
+        ''' Motor '''
         self.motor = Motor2Wheel()
         motor_obj = self.motor
         self.motor.usb_init(usb='/dev/ttyUSB0')
@@ -113,9 +127,31 @@ class MotorNode(Node):
         self.motor.set_speed(0, 0)
         time.sleep(3)
 
-    def set_target_callback(self, msg):
+
+    def receive_motor_main_callback(self, msg: Twist):
+        linear = msg.linear.z # mm/s
+        angular = msg.angular.z # rad/s
+        self.get_logger().info(f"twist main: linear-> {linear}, angular-> {angular}")
+        self.main_linear = linear
+        self.main_angular = angular
+
+
+    def receive_motor_aux_callback(self, msg: Twist):
+        angular = msg.angular.z # rad/s
+        self.get_logger().info(f"twist aux: angular-> {angular}")
+        self.aux_angular = angular
+
+
+    def receive_motor_pos_callback(self, msg: Twist):
         linear = msg.linear.z # m/s
         angular = msg.angular.z # rad/s
+        self.get_logger().info(f"twist pos: linear-> {linear}, angular-> {angular}")
+        ## do somthing
+
+
+    def set_target(self):
+        linear = self.main_linear # mm/s
+        angular = self.main_angular + self.aux_angular # rad/s
         self.get_logger().info(f"twist target: linear-> {linear}, angular-> {angular}")
         speed_left = linear - (self.wheel_dist / 2) * angular
         speed_right = linear + (self.wheel_dist / 2) * angular

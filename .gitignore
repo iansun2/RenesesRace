@@ -6,3 +6,5 @@
 
 /workspace/src/yolov9
 /config/code-server-config.yaml
+
+*.pyc

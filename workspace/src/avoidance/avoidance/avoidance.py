@@ -3,7 +3,7 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
-import time
+import time, json
 import math as m
 
 class AvoidanceNode(Node):
@@ -11,6 +11,7 @@ class AvoidanceNode(Node):
         super().__init__('avoidance_node')
         self.get_logger().info("init start")
         ''' config '''
+        self.enable = False
         # angle of head(front)
         self.head_position = m.radians(0)
         # avoidance fov (half)
@@ -28,17 +29,29 @@ class AvoidanceNode(Node):
         final_output = weighted_sum
         '''
         ''' pubsub '''
-        self.pub_mot = self.create_publisher(Twist, '/motor_sup', 1)
+        self.pub_mot = self.create_publisher(Twist, '/motor/aux', 1)
         self.pub_debug = self.create_publisher(LaserScan, '/avoidance_debug', 1)
-        # self.sub_ctrl = self.create_subscription(String, '/avoidance_ctrl', self.on_receive_ctrl, 1)
+        self.sub_cfg = self.create_subscription(String, '/avoidance_cfg', self.on_receive_cfg, 5)
         self.sub_scan = self.create_subscription(LaserScan, '/scan', self.on_receive_scan, 1)
         ''' end '''
         self.get_logger().info("init finish")
 
 
+    def on_receive_cfg(self, msg: String):
+        config = json.loads(msg.data)
+        self.enable = config['en']
+        self.avoidance_fov = m.radians(config['fov']) / 2 # write fov in ()
+        self.avoidance_angle_weight_min = config['weight_min']
+        self.avoidance_fov_factor = (1 - self.avoidance_angle_weight_min) / self.avoidance_fov
+        self.avoidance_distance = config['distance']
+        self.distance_kp = config['distance_kp']
+
+
     ''' receive lidar scan callback '''
-    def on_receive_scan(self, msg):
+    def on_receive_scan(self, msg: LaserScan):
         self.get_logger().info("scan receive")
+        if not self.enable:
+            return
         self.get_logger().info(f"ang_min: {msg.angle_min}")
         self.get_logger().info(f"ang_max: {msg.angle_max}")
         self.get_logger().info(f"ang_inc: {msg.angle_increment}")
