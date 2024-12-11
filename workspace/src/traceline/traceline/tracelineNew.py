@@ -50,9 +50,9 @@ class TraceLineNode(Node):
         '''  Config '''
         self.enable = True
         self.mode = 'dual'
-        self.mix_TMB = [0.5, 0.3, 0.2]
-        self.pid = [5, 0, 0]
-        self.speed = 0.06
+        self.mix_TMB = [0.4, 0.4, 0.2]
+        self.pid = [3, 0, 0]
+        self.speed = 0.06 * 10 * 15
         self.ref = 0.33
         self.get_logger().info('init finish')
         ''' Variable '''
@@ -106,8 +106,8 @@ class TraceLineNode(Node):
         ''' preprocess ''' 
         gau_frame = cv2.GaussianBlur(frame, (9,9), 0)
         hsv = cv2.cvtColor(gau_frame, cv2.COLOR_BGR2HSV)
-        # mask_R = cv2.inRange(hsv,lower_R,upper_R)
-        # mask_L = cv2.inRange(hsv,lower_L,upper_L)
+        mask_R = cv2.inRange(hsv,lower_R,upper_R)
+        mask_L = cv2.inRange(hsv,lower_L,upper_L)
         hsv_h = hsv[:, :, 2]
         # gau_hsv_h = cv2.GaussianBlur(hsv_h, (9,9), 0)
         canny = cv2.Canny(hsv_h, 80, 120)
@@ -117,42 +117,89 @@ class TraceLineNode(Node):
         # debug_frame = copy.deepcopy(canny)
         debug_frame = copy.deepcopy(frame)
         ''' find trace '''
-        road_edge_point_L = []
-        road_edge_point_R = []
+        road_edge_point_L = []  ## [x, y]
+        road_edge_point_R = []  ## [x, y]
         # find 
         h_middle = int(fsize[1] / 2)
         h_offset_max = int(h_middle)
         # print(f"hm {h_middle}, hom {h_offset_max}")
-        for v in range(0, fsize[0], 20):
+        ''' find start point from bottom '''
+        start_L = [-1, -1]  ## [x, y]
+        start_R = [-1, -1]  ## [x, y]
+        for v in range(fsize[0]-1, 0, -10):
             # find L
             for h in range(h_middle + 100, h_middle - h_offset_max, -5):
-                pixel = np.array([[hsv[v, h - 3, :]]])
-                if canny[v][h] and cv2.inRange(pixel, lower_L, upper_L):
-                    target_point = [h, v]
-                    road_edge_point_L.append(target_point)
+                ## skip when start point found
+                if start_L != [-1, -1]:
                     break
-            # find R
+                ## match start point requirement
+                if canny[v][h] and mask_L[v, h]:
+                    start_L = [h, v]
+                    break
+            ## right
             for h in range(h_middle - 100, h_middle + h_offset_max, 5):
-                pixel = np.array([[hsv[v, h + 3, :]]])
-                if canny[v][h] and cv2.inRange(pixel, lower_R, upper_R):
-                    target_point = [h, v]
-                    road_edge_point_R.append(target_point)
+                ## skip when start point found
+                if start_R != [-1, -1]:
                     break
-                
+                ## match start point requirement
+                if canny[v][h] and mask_R[v, h]:
+                    start_R = [h, v]
+                    break
+        # cv2.circle(debug_frame, (start_L), 2, (255, 255, 0), 2)
+        # cv2.circle(debug_frame, (start_R), 2, (255, 255, 0), 2)
+        ''' find other points from start point '''
+        ## left
+        iter_L = np.array(start_L)
+        for v in range(start_L[1], 20, -20):
+            valid_points = []
+            # cv2.circle(debug_frame, (iter_L), 3, (0, 255, 0), 2)
+            x_min = max(iter_L[0] - 30, 0)
+            x_max = min(iter_L[0] + 30, fsize[1] - 1)
+            for h in range(x_min, x_max, 4):
+                ## match valid requirement
+                if canny[v][h] and mask_L[v, h]:
+                    valid_points.append(np.array([h, v]))
+                    # cv2.circle(debug_frame, (valid_points[-1]), 1, (0, 0, 255), 2)
+            if len(valid_points) == 0:
+                valid_points = [np.array(iter_L)]
+            # print(f"L valid p: {valid_points}")
+            valid_x = np.array(valid_points)[:, 0]
+            # print(f"L valid x: {valid_x}")
+            iter_L = np.array([int(np.mean(valid_x)), int(v)])
+            road_edge_point_L.append(iter_L)
+        ## right
+        iter_R = np.array(start_R)
+        for v in range(start_R[1], 20, -20):
+            valid_points = []
+            # cv2.circle(debug_frame, (iter_L), 3, (0, 255, 0), 2)
+            x_min = max(iter_R[0] - 30, 0)
+            x_max = min(iter_R[0] + 30, fsize[1] - 1)
+            for h in range(x_min, x_max, 4):
+                ## match valid requirement
+                if canny[v][h] and mask_R[v, h]:
+                    valid_points.append(np.array([h, v]))
+                    # cv2.circle(debug_frame, (valid_points[-1]), 1, (0, 0, 255), 2)
+            ## not thing found
+            if len(valid_points) == 0:
+                valid_points = [np.array(iter_R)]
+            # print(f"L valid p: {valid_points}")
+            valid_x = np.array(valid_points)[:, 0]
+            # print(f"L valid x: {valid_x}")
+            iter_R = np.array([int(np.mean(valid_x)), int(v)])
+            road_edge_point_R.append(iter_R)
+        ''' append point if section is empty '''
         if len(road_edge_point_L) == 0:
             road_edge_point_L.append([0, 0])
             road_edge_point_L.append([0, (fsize[0] - 1) / 4])
             road_edge_point_L.append([0, (fsize[0] - 1) / 2])
             road_edge_point_L.append([0, (fsize[0] - 1) / 4 * 3])
             road_edge_point_L.append([0, fsize[0] - 1])
-            
         if len(road_edge_point_R) == 0:
             road_edge_point_R.append([fsize[1] - 1, 0])
             road_edge_point_R.append([fsize[1] - 1, (fsize[0] - 1) / 4])
             road_edge_point_R.append([fsize[1] - 1, (fsize[0] - 1) / 2])
             road_edge_point_R.append([fsize[1] - 1, (fsize[0] - 1) / 4 * 3])
             road_edge_point_R.append([fsize[1] - 1, fsize[0] - 1])
-        
         ''' calculate sum in 3 section '''
         avg_L = [0] * 3
         avg_L_cnt = [0] * 3
@@ -160,8 +207,10 @@ class TraceLineNode(Node):
         avg_R_cnt = [0] * 3
         section = [150, 100, 50] # seg0(bottom): >150, seg1(mid): 150-100, seg2(top): 100-50
         ## left
+        # print(f"L all: {road_edge_point_L}")
         for p in road_edge_point_L:
-            cv2.circle(debug_frame, p, 2, (255, 0, 0), 2)
+            # print(f"L final p: {p}")
+            # cv2.circle(debug_frame, p, 2, (255, 0, 0), 2)
             if p[1] > section[0]:
                 avg_L[0] += p[0]
                 avg_L_cnt[0] += 1
@@ -178,7 +227,7 @@ class TraceLineNode(Node):
         # print(avg_L)
         ## right
         for p in road_edge_point_R:
-            cv2.circle(debug_frame, p, 2, (0, 255, 0), 2)
+            # cv2.circle(debug_frame, p, 2, (0, 255, 0), 2)
             if p[1] > section[0]:
                 avg_R[0] += p[0]
                 avg_R_cnt[0] += 1
@@ -208,9 +257,9 @@ class TraceLineNode(Node):
         else:
             avg = avg_R
         avg = np.array(avg)
-        cv2.circle(debug_frame, (avg[0], section[0] + 25), 2, (255, 255, 255), 2)
-        cv2.circle(debug_frame, (avg[1], section[1] + 25), 2, (255, 255, 255), 2)
-        cv2.circle(debug_frame, (avg[2], section[2] + 25), 2, (255, 255, 255), 2)
+        # cv2.circle(debug_frame, (avg[0], section[0] + 25), 2, (255, 255, 255), 2)
+        # cv2.circle(debug_frame, (avg[1], section[1] + 25), 2, (255, 255, 255), 2)
+        # cv2.circle(debug_frame, (avg[2], section[2] + 25), 2, (255, 255, 255), 2)
         output_seg = h_middle - avg
         output = output_seg[0] * self.mix_TMB[2] \
             + output_seg[1] * self.mix_TMB[1] \
