@@ -46,7 +46,7 @@ class USBCameraRGBNode(Node):
             self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3) # auto expos
             time.sleep(3)
             self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # manual expos
-            self.cap.set(cv2.CAP_PROP_EXPOSURE, 5)
+            self.cap.set(cv2.CAP_PROP_EXPOSURE, 15)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             self.cap.set(cv2.CAP_PROP_CONVERT_RGB, 1)

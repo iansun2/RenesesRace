@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import copy, json
+import copy, json, time
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -48,13 +48,16 @@ class TraceLineNode(Node):
         self.bridge = CvBridge()
         self.pub_mot = self.create_publisher(Twist, '/motor/main', 10)
         '''  Config '''
-        self.enable = False
+        self.enable = True
         self.mode = 'dual'
         self.mix_TMB = [0.5, 0.3, 0.2]
         self.pid = [5, 0, 0]
         self.speed = 0.06
         self.ref = 0.33
         self.get_logger().info('init finish')
+        ''' Variable '''
+        self.fps_counter = 0
+        self.last_count_time = time.time()
 
 
     def on_receive_cfg(self, msg: String):
@@ -87,28 +90,33 @@ class TraceLineNode(Node):
         self.pub_mot.publish(msg)
         cv2.imshow("traceline", debug_img)
         cv2.waitKey(1)
+        ''' fps '''
+        self.fps_counter += 1
+        if time.time() - self.last_count_time >= 2:
+            self.get_logger().info(f"fps: {self.fps_counter / 2}")
+            self.fps_counter = 0
+            self.last_count_time = time.time()
 
 
     def get_trace_value(self, frame : cv2.UMat) -> tuple[float, cv2.UMat]:
         rsize = frame.shape
         frame = frame[200:rsize[0]-100, 100:rsize[1]-100, :]
         frame = cv2.resize(frame, (320, 200))
-        
         fsize = frame.shape
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        
+        ''' preprocess ''' 
+        gau_frame = cv2.GaussianBlur(frame, (9,9), 0)
+        hsv = cv2.cvtColor(gau_frame, cv2.COLOR_BGR2HSV)
         # mask_R = cv2.inRange(hsv,lower_R,upper_R)
         # mask_L = cv2.inRange(hsv,lower_L,upper_L)
-        
         hsv_h = hsv[:, :, 2]
-        gau_hsv_h = cv2.GaussianBlur(hsv_h, (9,9), 0)
-        canny = cv2.Canny(gau_hsv_h, 80, 120)
+        # gau_hsv_h = cv2.GaussianBlur(hsv_h, (9,9), 0)
+        canny = cv2.Canny(hsv_h, 80, 120)
         kernel = np.ones((9,9), np.uint8)
         canny = cv2.dilate(canny, kernel)
-        
+        ## debug frame
         # debug_frame = copy.deepcopy(canny)
         debug_frame = copy.deepcopy(frame)
-        
+        ''' find trace '''
         road_edge_point_L = []
         road_edge_point_R = []
         # find 
@@ -144,18 +152,6 @@ class TraceLineNode(Node):
             road_edge_point_R.append([fsize[1] - 1, (fsize[0] - 1) / 2])
             road_edge_point_R.append([fsize[1] - 1, (fsize[0] - 1) / 4 * 3])
             road_edge_point_R.append([fsize[1] - 1, fsize[0] - 1])
-        
-        # raw_L = np.array(road_edge_point_L)
-        # df = pd.DataFrame({'x':raw_L[:, 0], 'y':raw_L[:,1]})
-        # df['z_score'] = stats.zscore(df['x'])
-        # df = df.loc[df['z_score'].abs() <= 2]
-        # road_edge_point_L = df[['x', 'y']].to_numpy()
-        
-        # raw_R = np.array(road_edge_point_R)
-        # df = pd.DataFrame({'x':raw_R[:, 0], 'y':raw_R[:,1]})
-        # df['z_score'] = stats.zscore(df['x'])
-        # df = df.loc[df['z_score'].abs() <= 2]
-        # road_edge_point_R = df[['x', 'y']].to_numpy()
         
         ''' calculate sum in 3 section '''
         avg_L = [0] * 3
