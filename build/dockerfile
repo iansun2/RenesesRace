@@ -4,7 +4,6 @@ RUN apt update
 RUN apt install -y qtwayland5 ros-humble-rqt curl
 RUN curl -fsSL https://code-server.dev/install.sh | sh
 RUN apt install -y vim wget git python3-pip gpg tmux
-
 # # add microsoft gpg
 # RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg \
 #     && sudo install -D -o root -g root -m 644 packages.microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg \
@@ -17,6 +16,7 @@ RUN apt install -y vim wget git python3-pip gpg tmux
 
 
 COPY scripts/start_code* /root/
+RUN pip install dynamixel_sdk
 
 
 CMD ["/bin/bash"]

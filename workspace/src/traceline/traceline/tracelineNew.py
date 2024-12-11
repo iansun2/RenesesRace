@@ -1,8 +1,6 @@
 import cv2
 import numpy as np
 import copy, json
-import pandas as pd
-from scipy import stats
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
@@ -36,6 +34,7 @@ upper_R = np.array([R_H_high,R_S_high,R_V_high])
 class TraceLineNode(Node):
     def __init__(self):
         super().__init__('traceline_new_node')
+        self.get_logger().info('init start')
         self.sub_img = self.create_subscription(
             Image,
             '/rgb',
@@ -44,7 +43,7 @@ class TraceLineNode(Node):
         self.sub_cfg = self.create_subscription(
             String,
             '/trace_cfg',
-            self.receive_cfg_callback,
+            self.on_receive_cfg,
             5)
         self.bridge = CvBridge()
         self.pub_mot = self.create_publisher(Twist, '/motor/main', 10)
@@ -53,30 +52,40 @@ class TraceLineNode(Node):
         self.mode = 'dual'
         self.mix_TMB = [0.5, 0.3, 0.2]
         self.pid = [5, 0, 0]
-        self.speed = 60
+        self.speed = 0.06
         self.ref = 0.33
+        self.get_logger().info('init finish')
 
 
     def on_receive_cfg(self, msg: String):
         config = json.loads(msg.data)
-        self.enable = config['en']
-        self.mode = config['mode']
-        self.mix_TMB = config['mix_TMB']
-        self.pid = config['pid']
-        self.speed = config['speed']
-        self.ref = config['ref']
+        self.get_logger().info(f"receive config:\n{config}")
+        if config.get('en') is not None:
+            self.enable = config['en']
+        if config.get('mode') is not None:
+            self.mode = config['mode']
+        if config.get('mix_TMB') is not None:
+            self.mix_TMB = config['mix_TMB']
+        if config.get('pid') is not None:
+            self.pid = config['pid']
+        if config.get('speed') is not None:
+            self.speed = config['speed']
+        if config.get('ref') is not None:
+            self.ref = config['ref']
 
 
     def receive_image_callback(self, msg):
+        if not self.enable:
+            return
         img = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         # cv2.imshow("receive", img)
         trace, debug_img = self.get_trace_value(img)
         self.get_logger().info(f"trace: {trace}")
         msg = Twist()
-        msg.linear.z = self.speed
-        msg.angular.z = trace
+        msg.linear.z = float(self.speed)
+        msg.angular.z = float(trace)
         self.pub_mot.publish(msg)
-        # cv2.imshow("traceline", debug_img)
+        cv2.imshow("traceline", debug_img)
         cv2.waitKey(1)
 
 
@@ -136,17 +145,17 @@ class TraceLineNode(Node):
             road_edge_point_R.append([fsize[1] - 1, (fsize[0] - 1) / 4 * 3])
             road_edge_point_R.append([fsize[1] - 1, fsize[0] - 1])
         
-        raw_L = np.array(road_edge_point_L)
-        df = pd.DataFrame({'x':raw_L[:, 0], 'y':raw_L[:,1]})
-        df['z_score'] = stats.zscore(df['x'])
-        df = df.loc[df['z_score'].abs() <= 2]
-        road_edge_point_L = df[['x', 'y']].to_numpy()
+        # raw_L = np.array(road_edge_point_L)
+        # df = pd.DataFrame({'x':raw_L[:, 0], 'y':raw_L[:,1]})
+        # df['z_score'] = stats.zscore(df['x'])
+        # df = df.loc[df['z_score'].abs() <= 2]
+        # road_edge_point_L = df[['x', 'y']].to_numpy()
         
-        raw_R = np.array(road_edge_point_R)
-        df = pd.DataFrame({'x':raw_R[:, 0], 'y':raw_R[:,1]})
-        df['z_score'] = stats.zscore(df['x'])
-        df = df.loc[df['z_score'].abs() <= 2]
-        road_edge_point_R = df[['x', 'y']].to_numpy()
+        # raw_R = np.array(road_edge_point_R)
+        # df = pd.DataFrame({'x':raw_R[:, 0], 'y':raw_R[:,1]})
+        # df['z_score'] = stats.zscore(df['x'])
+        # df = df.loc[df['z_score'].abs() <= 2]
+        # road_edge_point_R = df[['x', 'y']].to_numpy()
         
         ''' calculate sum in 3 section '''
         avg_L = [0] * 3
@@ -156,7 +165,7 @@ class TraceLineNode(Node):
         section = [150, 100, 50] # seg0(bottom): >150, seg1(mid): 150-100, seg2(top): 100-50
         ## left
         for p in road_edge_point_L:
-            # cv2.circle(debug_frame, p, 2, (255, 0, 0), 2)
+            cv2.circle(debug_frame, p, 2, (255, 0, 0), 2)
             if p[1] > section[0]:
                 avg_L[0] += p[0]
                 avg_L_cnt[0] += 1
@@ -173,7 +182,7 @@ class TraceLineNode(Node):
         # print(avg_L)
         ## right
         for p in road_edge_point_R:
-            # cv2.circle(debug_frame, p, 2, (0, 255, 0), 2)
+            cv2.circle(debug_frame, p, 2, (0, 255, 0), 2)
             if p[1] > section[0]:
                 avg_R[0] += p[0]
                 avg_R_cnt[0] += 1
@@ -203,9 +212,9 @@ class TraceLineNode(Node):
         else:
             avg = avg_R
         avg = np.array(avg)
-        # cv2.circle(debug_frame, (avg[0], section[0] + 25), 2, (255, 255, 255), 2)
-        # cv2.circle(debug_frame, (avg[1], section[1] + 25), 2, (255, 255, 255), 2)
-        # cv2.circle(debug_frame, (avg[2], section[2] + 25), 2, (255, 255, 255), 2)
+        cv2.circle(debug_frame, (avg[0], section[0] + 25), 2, (255, 255, 255), 2)
+        cv2.circle(debug_frame, (avg[1], section[1] + 25), 2, (255, 255, 255), 2)
+        cv2.circle(debug_frame, (avg[2], section[2] + 25), 2, (255, 255, 255), 2)
         output_seg = h_middle - avg
         output = output_seg[0] * self.mix_TMB[2] \
             + output_seg[1] * self.mix_TMB[1] \

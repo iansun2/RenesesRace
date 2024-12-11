@@ -11,9 +11,6 @@ import time
 import json
 
 
-
-
-
 class ModeSelectorNode(Node):
     def __init__(self):
         super().__init__('mode_selector_node')
@@ -24,6 +21,7 @@ class ModeSelectorNode(Node):
         self.pub_avoidance_cfg = self.create_publisher(String, '/avoidance_cfg', 5)
         self.pub_motor_pos = self.create_publisher(Twist, '/motor/pos', 5)
         self.sub_lidar = self.create_subscription(LaserScan, '/scan', self.on_receive_scan, 1)
+        self.sub_mode = self.create_subscription(String, '/mode', self.on_set_mode, 5)
         ''' timer ''' 
         self.redis_timer = self.create_timer(0.03, self.redis_timer_callback)
         ''' parameter '''
@@ -32,10 +30,13 @@ class ModeSelectorNode(Node):
         self.last_yolo_result_idx = -1
         self.current_mode = 'init'
         try:
-            self.cfg_file = open('mode_config.json', 'r')
-        except:
-            self.get_logger().error("open mode_config.json failed")
+            file = open('mode_config.json', 'r')
+            self.cfg_json = json.load(file)
+            self.get_logger().info(f"config:\n{self.cfg_json}")
+        except Exception as e:
+            self.get_logger().error(f"open mode_config.json failed: {e}")
         self.get_logger().info("init end")
+        self.print_menu()
 
 
     def redis_timer_callback(self):
@@ -79,22 +80,47 @@ class ModeSelectorNode(Node):
         if self.current_mode == mode:
             return
         ''' mode change '''
+        self.get_logger().info(f"from mode: {self.current_mode} to {mode}")
         self.current_mode = mode
-        config = self.cfg_file[mode]
+        config = self.cfg_json[mode + '_cfg']
         ## trace
-        msg = String
+        msg = String()
         msg.data = json.dumps(config["trace"])
         self.pub_trace_cfg.publish(msg)
         ## avoidance
-        msg = String
+        msg = String()
         msg.data = json.dumps(config["avoidance"])
-        self.pub_trace_cfg.publish(msg)
+        self.pub_avoidance_cfg.publish(msg)
 
 
     def on_receive_scan(self, msg: LaserScan):
-        
         pass
 
+
+    def on_set_mode(self, msg: String):
+        mode_num = msg.data
+        if mode_num == '0':
+            self.change_mode('init')
+        elif mode_num == '1':
+            self.change_mode('to_fork')
+        elif mode_num == '2':
+            self.change_mode('fork_left')
+        elif mode_num == '3':
+            self.change_mode('fork_right')
+        elif mode_num == '4':
+            self.change_mode('to_avoidance')
+        elif mode_num == '5':
+            self.change_mode('avoidance')
+
+
+    def print_menu(self):
+        print(f"current mode: {self.current_mode}")
+        print(f"0. init")
+        print(f"1. to_fork")
+        print(f"2. fork_left")
+        print(f"3. fork_right")
+        print(f"4. to_avoidance")
+        print(f"5. avoidance")
 
 
 

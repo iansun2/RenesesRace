@@ -107,8 +107,8 @@ class MotorNode(Node):
             self.receive_motor_pos_callback,
             5)
         ''' Car Struct '''
-        self.wheel_radius = 50 # mm
-        self.wheel_dist = 200 # mm
+        self.wheel_radius = 0.05 # meters
+        self.wheel_dist = 0.2 # meters
         ''' Variable '''
         self.main_linear = 0
         self.main_angular = 0
@@ -129,17 +129,19 @@ class MotorNode(Node):
 
 
     def receive_motor_main_callback(self, msg: Twist):
-        linear = msg.linear.z # mm/s
+        linear = msg.linear.z # m/s
         angular = msg.angular.z # rad/s
         self.get_logger().info(f"twist main: linear-> {linear}, angular-> {angular}")
         self.main_linear = linear
         self.main_angular = angular
+        self.set_target()
 
 
     def receive_motor_aux_callback(self, msg: Twist):
         angular = msg.angular.z # rad/s
         self.get_logger().info(f"twist aux: angular-> {angular}")
         self.aux_angular = angular
+        self.set_target()
 
 
     def receive_motor_pos_callback(self, msg: Twist):
@@ -150,7 +152,7 @@ class MotorNode(Node):
 
 
     def set_target(self):
-        linear = self.main_linear # mm/s
+        linear = self.main_linear # m/s
         angular = self.main_angular + self.aux_angular # rad/s
         self.get_logger().info(f"twist target: linear-> {linear}, angular-> {angular}")
         speed_left = linear - (self.wheel_dist / 2) * angular

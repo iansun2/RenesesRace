@@ -5,7 +5,7 @@
         "mix_TMB"   : [0.5, 0.3, 0.2],
         "ref_LR"    : [0.33, 0.66],
         "pid"       : [5, 0, 0],
-        "speed"     : 60
+        "speed"     : 0.06
     },
     "AVOIDANCE_CFG": {
         "en"            : true,
@@ -15,13 +15,21 @@
         "distance_kp"   : 0.1
     },
 
+    "init_cfg": {
+        "trace": {
+            "en"    : false
+        },
+        "avoidance": {
+            "en"    : false
+        }
+    },
     "to_fork_cfg": {
         "trace": {
             "en"        : true,
             "mode"      : "dual",
             "mix_TMB"   : [0.5, 0.3, 0.2],
-            "pid"       : [5, 0, 0],
-            "speed"     : 60
+            "pid"       : [1, 0, 0],
+            "speed"     : 0.06
         },
         "avoidance": {
             "en"    : false
@@ -34,7 +42,7 @@
             "mix_TMB"   : [0.5, 0.3, 0.2],
             "ref"       : 0.33,
             "pid"       : [5, 0, 0],
-            "speed"     : 60
+            "speed"     : 0.06
         },
         "avoidance": {
             "en"    : false
@@ -47,7 +55,7 @@
             "mix_TMB"   : [0.5, 0.3, 0.2],
             "ref"       : 0.66,
             "pid"       : [5, 0, 0],
-            "speed"     : 60
+            "speed"     : 0.06
         },
         "avoidance": {
             "en"    : false
@@ -60,7 +68,7 @@
             "mode"      : "dual",
             "mix_TMB"   : [0.5, 0.3, 0.2],
             "pid"       : [5, 0, 0],
-            "speed"     : 60
+            "speed"     : 0.06
         },
         "avoidance": {
             "en"    : false
@@ -72,7 +80,7 @@
             "mode"      : "dual",
             "mix_TMB"   : [0.5, 0.3, 0.2],
             "pid"       : [5, 0, 0],
-            "speed"     : 60
+            "speed"     : 0.06
         },
         "avoidance": {
             "en"            : true,
@@ -89,7 +97,7 @@
             "mode"      : "dual",
             "mix_TMB"   : [0.5, 0.3, 0.2],
             "pid"       : [5, 0, 0],
-            "speed"     : 60
+            "speed"     : 0.06
         },
         "avoidance": {
             "en"    : false
@@ -102,7 +110,7 @@
             "mix_TMB"   : [0.5, 0.3, 0.2],
             "ref"       : 0.33,
             "pid"       : [5, 0, 0],
-            "speed"     : 60
+            "speed"     : 0.06
         },
         "avoidance": {
             "en"    : false
