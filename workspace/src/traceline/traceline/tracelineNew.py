@@ -50,7 +50,7 @@ class TraceLineNode(Node):
         '''  Config '''
         self.enable = True
         self.mode = 'dual'
-        self.mix_TMB = [0.4, 0.4, 0.2]
+        self.mix_TMB = [0.3, 0.5, 0.2]
         self.pid = [3, 0, 0]
         self.speed = 0.06 * 10 * 15
         self.ref = 0.33
@@ -210,7 +210,7 @@ class TraceLineNode(Node):
         # print(f"L all: {road_edge_point_L}")
         for p in road_edge_point_L:
             # print(f"L final p: {p}")
-            # cv2.circle(debug_frame, p, 2, (255, 0, 0), 2)
+            cv2.circle(debug_frame, p, 2, (255, 0, 0), 2)
             if p[1] > section[0]:
                 avg_L[0] += p[0]
                 avg_L_cnt[0] += 1
@@ -227,7 +227,7 @@ class TraceLineNode(Node):
         # print(avg_L)
         ## right
         for p in road_edge_point_R:
-            # cv2.circle(debug_frame, p, 2, (0, 255, 0), 2)
+            cv2.circle(debug_frame, p, 2, (0, 255, 0), 2)
             if p[1] > section[0]:
                 avg_R[0] += p[0]
                 avg_R_cnt[0] += 1
