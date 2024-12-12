@@ -4,6 +4,7 @@ from dynamixel_sdk import *
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+import math as m
 
 motor_obj = None 
 
@@ -80,10 +81,14 @@ class Motor2Wheel(UsbDevice):
             print("[ID:%03d] ping Succeeded. Dynamixel model number : %d" % (self.m2_id, m2_model_number))
 
     def set_speed(self, m1_speed, m2_speed):
+        '''
+            speed: rpm
+        '''
+        ## factor 0.229 from XM430-W350 datasheet
         # Motor 1
-        self.packetHandler.write4ByteTxRx(self.portHandler,self.m1_id, 104, int(m1_speed))
+        self.packetHandler.write4ByteTxRx(self.portHandler,self.m1_id, 104, int(m1_speed / 0.229))
         # Motor 2
-        self.packetHandler.write4ByteTxRx(self.portHandler,self.m2_id, 104, int(m2_speed))
+        self.packetHandler.write4ByteTxRx(self.portHandler,self.m2_id, 104, int(m2_speed / 0.229))
 
 
 
@@ -107,8 +112,8 @@ class MotorNode(Node):
             self.receive_motor_pos_callback,
             5)
         ''' Car Struct '''
-        self.wheel_radius = 0.05 # meters
-        self.wheel_dist = 0.2 # meters
+        self.wheel_radius = 0.0325 # meters
+        self.wheel_dist = 0.162 # meters
         ''' Variable '''
         self.main_linear = 0
         self.main_angular = 0
@@ -120,12 +125,9 @@ class MotorNode(Node):
         self.motor.motor_init(m1_id=1, m2_id=2)
         self.motor.ping()
         self.motor.set_speed(0, 0)
-        # self.motor.set_speed(50, 0)
-        # time.sleep(1)
-        # self.motor.set_speed(0, 50)
-        # time.sleep(1)
-        self.motor.set_speed(0, 0)
         time.sleep(3)
+        ''' debug '''
+
 
 
     def receive_motor_main_callback(self, msg: Twist):
@@ -157,8 +159,8 @@ class MotorNode(Node):
         self.get_logger().info(f"twist target: linear-> {linear}, angular-> {angular}")
         speed_left = linear - (self.wheel_dist / 2) * angular
         speed_right = linear + (self.wheel_dist / 2) * angular
-        output_left = speed_left / self.wheel_radius
-        output_right = speed_right / self.wheel_radius
+        output_left = 60 * speed_left / (self.wheel_radius * 2 * m.pi)     # mult 60 for rps to rpm
+        output_right = 60 * speed_right / (self.wheel_radius * 2 * m.pi)   # mult 60 for rps to rpm
         self.get_logger().info(f"output target: left: {output_left}, right: {output_right}")
         self.motor.set_speed(output_left, output_right)
 

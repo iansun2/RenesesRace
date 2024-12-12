@@ -51,8 +51,8 @@ class TraceLineNode(Node):
         self.enable = True
         self.mode = 'dual'
         self.mix_TMB = [0.3, 0.5, 0.2]
-        self.pid = [3, 0, 0]
-        self.speed = 0.06 * 10 * 15
+        self.pid = [0.03, 0, 0]
+        self.speed = 0.15
         self.ref = 0.33
         self.get_logger().info('init finish')
         ''' Variable '''
@@ -83,10 +83,11 @@ class TraceLineNode(Node):
         img = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         # cv2.imshow("receive", img)
         trace, debug_img = self.get_trace_value(img)
-        self.get_logger().info(f"trace: {trace}")
+        trace_out = trace * self.pid[0]
+        self.get_logger().info(f"trace_out: {trace_out}")
         msg = Twist()
         msg.linear.z = float(self.speed)
-        msg.angular.z = float(trace)
+        msg.angular.z = float(trace_out)
         self.pub_mot.publish(msg)
         cv2.imshow("traceline", debug_img)
         cv2.waitKey(1)
@@ -128,7 +129,7 @@ class TraceLineNode(Node):
         start_R = [-1, -1]  ## [x, y]
         for v in range(fsize[0]-1, 0, -10):
             # find L
-            for h in range(h_middle + 100, h_middle - h_offset_max, -5):
+            for h in range(h_middle - 50, h_middle - h_offset_max, -5):
                 ## skip when start point found
                 if start_L != [-1, -1]:
                     break
@@ -137,7 +138,7 @@ class TraceLineNode(Node):
                     start_L = [h, v]
                     break
             ## right
-            for h in range(h_middle - 100, h_middle + h_offset_max, 5):
+            for h in range(h_middle + 50, h_middle + h_offset_max, 5):
                 ## skip when start point found
                 if start_R != [-1, -1]:
                     break
@@ -187,19 +188,6 @@ class TraceLineNode(Node):
             # print(f"L valid x: {valid_x}")
             iter_R = np.array([int(np.mean(valid_x)), int(v)])
             road_edge_point_R.append(iter_R)
-        ''' append point if section is empty '''
-        if len(road_edge_point_L) == 0:
-            road_edge_point_L.append([0, 0])
-            road_edge_point_L.append([0, (fsize[0] - 1) / 4])
-            road_edge_point_L.append([0, (fsize[0] - 1) / 2])
-            road_edge_point_L.append([0, (fsize[0] - 1) / 4 * 3])
-            road_edge_point_L.append([0, fsize[0] - 1])
-        if len(road_edge_point_R) == 0:
-            road_edge_point_R.append([fsize[1] - 1, 0])
-            road_edge_point_R.append([fsize[1] - 1, (fsize[0] - 1) / 4])
-            road_edge_point_R.append([fsize[1] - 1, (fsize[0] - 1) / 2])
-            road_edge_point_R.append([fsize[1] - 1, (fsize[0] - 1) / 4 * 3])
-            road_edge_point_R.append([fsize[1] - 1, fsize[0] - 1])
         ''' calculate sum in 3 section '''
         avg_L = [0] * 3
         avg_L_cnt = [0] * 3
@@ -227,6 +215,7 @@ class TraceLineNode(Node):
         # print(avg_L)
         ## right
         for p in road_edge_point_R:
+            # print(f"R final p: {p}")
             cv2.circle(debug_frame, p, 2, (0, 255, 0), 2)
             if p[1] > section[0]:
                 avg_R[0] += p[0]
