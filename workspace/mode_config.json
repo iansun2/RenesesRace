@@ -2,10 +2,10 @@
     "TRACE_CFG": {
         "en"        : true,
         "mode"      : "dual",
-        "mix_TMB"   : [0.5, 0.3, 0.2],
+        "mix_TMB"   : [0.3, 0.5, 0.2],
         "ref_LR"    : [0.33, 0.66],
-        "pid"       : [5, 0, 0],
-        "speed"     : 0.06
+        "pid"       : [0.03, 0, 0],
+        "speed"     : 0.15
     },
     "AVOIDANCE_CFG": {
         "en"            : true,
@@ -27,9 +27,9 @@
         "trace": {
             "en"        : true,
             "mode"      : "dual",
-            "mix_TMB"   : [0.5, 0.3, 0.2],
-            "pid"       : [1, 0, 0],
-            "speed"     : 0.06
+            "mix_TMB"   : [0.3, 0.5, 0.2],
+            "pid"       : [0.03, 0, 0],
+            "speed"     : 0.15
         },
         "avoidance": {
             "en"    : false
@@ -39,10 +39,10 @@
         "trace": {
             "en"        : true,
             "mode"      : "left",
-            "mix_TMB"   : [0.5, 0.3, 0.2],
+            "mix_TMB"   : [0.3, 0.5, 0.2],
             "ref"       : 0.33,
-            "pid"       : [5, 0, 0],
-            "speed"     : 0.06
+            "pid"       : [0.03, 0, 0],
+            "speed"     : 0.15
         },
         "avoidance": {
             "en"    : false
@@ -52,10 +52,10 @@
         "trace": {
             "en"        : true,
             "mode"      : "right",
-            "mix_TMB"   : [0.5, 0.3, 0.2],
+            "mix_TMB"   : [0.3, 0.5, 0.2],
             "ref"       : 0.66,
-            "pid"       : [5, 0, 0],
-            "speed"     : 0.06
+            "pid"       : [0.03, 0, 0],
+            "speed"     : 0.15
         },
         "avoidance": {
             "en"    : false
@@ -66,9 +66,9 @@
         "trace": {
             "en"        : true,
             "mode"      : "dual",
-            "mix_TMB"   : [0.5, 0.3, 0.2],
-            "pid"       : [5, 0, 0],
-            "speed"     : 0.06
+            "mix_TMB"   : [0.3, 0.5, 0.2],
+            "pid"       : [0.03, 0, 0],
+            "speed"     : 0.15
         },
         "avoidance": {
             "en"    : false
@@ -78,9 +78,9 @@
         "trace": {
             "en"        : true,
             "mode"      : "dual",
-            "mix_TMB"   : [0.5, 0.3, 0.2],
-            "pid"       : [5, 0, 0],
-            "speed"     : 0.06
+            "mix_TMB"   : [0.3, 0.5, 0.2],
+            "pid"       : [0.03, 0, 0],
+            "speed"     : 0.15
         },
         "avoidance": {
             "en"            : true,
@@ -95,9 +95,9 @@
         "trace": {
             "en"        : true,
             "mode"      : "dual",
-            "mix_TMB"   : [0.5, 0.3, 0.2],
-            "pid"       : [5, 0, 0],
-            "speed"     : 0.06
+            "mix_TMB"   : [0.3, 0.5, 0.2],
+            "pid"       : [0.03, 0, 0],
+            "speed"     : 0.15
         },
         "avoidance": {
             "en"    : false
@@ -107,10 +107,10 @@
         "trace": {
             "en"        : true,
             "mode"      : "left",
-            "mix_TMB"   : [0.5, 0.3, 0.2],
+            "mix_TMB"   : [0.3, 0.5, 0.2],
             "ref"       : 0.33,
-            "pid"       : [5, 0, 0],
-            "speed"     : 0.06
+            "pid"       : [0.03, 0, 0],
+            "speed"     : 0.15
         },
         "avoidance": {
             "en"    : false
