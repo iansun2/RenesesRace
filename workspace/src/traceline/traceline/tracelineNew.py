@@ -52,7 +52,7 @@ class TraceLineNode(Node):
         self.mode = 'dual'
         self.mix_TMB = [0.3, 0.5, 0.2]
         self.pid = [0.03, 0, 0]
-        self.speed = 0.15
+        self.speed = 0.1
         self.ref = 0.33
         self.get_logger().info('init finish')
         ''' Variable '''

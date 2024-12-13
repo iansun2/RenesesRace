@@ -20,7 +20,7 @@ class AvoidanceNode(Node):
         self.avoidance_angle_weight_min = 0.1
         self.avoidance_fov_factor = (1 - self.avoidance_angle_weight_min) / self.avoidance_fov
         # start avoidance distance
-        self.avoidance_distance = 0.4
+        self.avoidance_distance = 0.5
         self.distance_kp = 0.1
         ''' formula
         avoidance_fov_factor = (1 - avoidance_angle_weight_min) / avoidance_fov
