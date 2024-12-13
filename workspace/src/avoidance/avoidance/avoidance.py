@@ -11,7 +11,7 @@ class AvoidanceNode(Node):
         super().__init__('avoidance_node')
         self.get_logger().info("init start")
         ''' config '''
-        self.enable = False
+        self.enable = True
         # angle of head(front)
         self.head_position = m.radians(0)
         # avoidance fov (half)
@@ -49,13 +49,13 @@ class AvoidanceNode(Node):
 
     ''' receive lidar scan callback '''
     def on_receive_scan(self, msg: LaserScan):
-        self.get_logger().info("scan receive")
+        # self.get_logger().info("scan receive")
         if not self.enable:
             return
-        self.get_logger().info(f"ang_min: {msg.angle_min}")
-        self.get_logger().info(f"ang_max: {msg.angle_max}")
-        self.get_logger().info(f"ang_inc: {msg.angle_increment}")
-        self.get_logger().info(f"point cnt: {len(msg.ranges)}")
+        # self.get_logger().info(f"ang_min: {msg.angle_min}")
+        # self.get_logger().info(f"ang_max: {msg.angle_max}")
+        # self.get_logger().info(f"ang_inc: {msg.angle_increment}")
+        # self.get_logger().info(f"point cnt: {len(msg.ranges)}")
         weighted_sum = 0
         weighted_value = []
         for idx in range(len(msg.ranges)):
@@ -82,11 +82,16 @@ class AvoidanceNode(Node):
             weighted_value[-1] = abs(weighted_value[-1]) * 30
             # weighted_value[-1] = 1 + point_weight
             # print(f"pw: {point_weight}")
-        final_output = weighted_sum
+        final_output = weighted_sum * -1 ## -1 for invert left/right
         self.get_logger().info(f"final output: {final_output}")
-        # for debug
+        ## for debug
         msg.ranges = weighted_value
         self.pub_debug.publish(msg)
+        ## to motor
+        msg = Twist()
+        msg.angular.z = float(final_output)
+        self.pub_mot.publish(msg)
+
 
 
 

@@ -126,8 +126,8 @@ class MotorNode(Node):
         self.motor.ping()
         self.motor.set_speed(0, 0)
         time.sleep(3)
+        self.get_logger().info("init finish")
         ''' debug '''
-
 
 
     def receive_motor_main_callback(self, msg: Twist):
