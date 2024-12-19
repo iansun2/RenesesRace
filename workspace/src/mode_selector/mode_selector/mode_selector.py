@@ -94,7 +94,8 @@ class ModeSelectorNode(Node):
 
 
     def on_receive_scan(self, msg: LaserScan):
-        pass
+        if self.current_mode == "parking":
+            pass
 
 
     def on_set_mode(self, msg: String):

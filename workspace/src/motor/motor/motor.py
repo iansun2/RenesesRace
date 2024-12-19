@@ -147,10 +147,28 @@ class MotorNode(Node):
 
 
     def receive_motor_pos_callback(self, msg: Twist):
+        REF_LINEAR = 0.1 # m/s
+        REF_ANGULAR = 3 # rad/s
         linear = msg.linear.z # m/s
         angular = msg.angular.z # rad/s
         self.get_logger().info(f"twist pos: linear-> {linear}, angular-> {angular}")
-        ## do somthing
+        if linear and angular:
+            self.get_logger().warn(f"twist pos input linear and angular at same time")
+        self.aux_angular = self.main_angular = self.main_linear = 0
+        if angular:
+            dt = angular / REF_ANGULAR
+            self.main_angular = REF_ANGULAR
+            self.set_target()
+            time.sleep(dt)
+            self.main_angular = 0
+            self.set_target()
+        elif linear:
+            dt = linear / REF_LINEAR
+            self.main_linear = REF_LINEAR
+            self.set_target()
+            time.sleep(dt)
+            self.main_linear = 0
+            self.set_target()
 
 
     def set_target(self):
