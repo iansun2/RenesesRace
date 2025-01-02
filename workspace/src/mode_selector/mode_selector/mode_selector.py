@@ -3,12 +3,14 @@ from rclpy.node import Node
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
+from std_msgs.msg import Int8
 
 import numpy as np
 import cv2
 import redis
 import time
 import json
+import math as m
 
 
 class ModeSelectorNode(Node):
@@ -22,6 +24,8 @@ class ModeSelectorNode(Node):
         self.pub_motor_pos = self.create_publisher(Twist, '/motor/pos', 5)
         self.sub_lidar = self.create_subscription(LaserScan, '/scan', self.on_receive_scan, 1)
         self.sub_mode = self.create_subscription(String, '/mode', self.on_set_mode, 5)
+        self.sub_motor_status = self.create_subscription(
+                                    Int8, '/motor/status', self.on_receive_motor_status, 5)
         ''' timer ''' 
         self.redis_timer = self.create_timer(0.03, self.redis_timer_callback)
         ''' parameter '''
@@ -94,7 +98,45 @@ class ModeSelectorNode(Node):
 
 
     def on_receive_scan(self, msg: LaserScan):
-        if self.current_mode == "parking":
+        print("aa")
+        self.wait_motor_free()
+        FRONT_ANGLE = 0
+        LOCK_DIST = 0.5 # meters
+        LOCK_FOV = m.radians(120) / 2 # write fov in ()
+        ## after looking sign, start left tracing
+        if self.current_mode == "approach_parking":
+            lock_points_count = 0
+            lock_points_avg_angle = 0
+            # try lock target
+            for idx in range(len(msg.ranges)):
+                # angle using -pi to +pi
+                point_angle = msg.angle_increment * idx
+                if point_angle > m.pi:
+                    point_angle = -2 * m.pi + point_angle
+                # dist
+                point_distance = msg.ranges[idx]
+                ## match lock condition
+                if point_distance < LOCK_DIST \
+                        and point_angle <= LOCK_FOV \
+                        and point_angle >= -LOCK_FOV:
+                    lock_points_count += 1
+                    lock_points_avg_angle == point_angle
+            ## change mode
+            if lock_points_count > 10:
+                if lock_points_avg_angle > 0:
+                    self.park_dir = "R"
+                else:
+                    self.park_dir = "L"
+                self.change_mode('parking')
+                self.get_logger().info(f"park to: {self.park_dir}")
+        ## after close enough to object
+        elif self.current_mode == "parking":
+            ## pub twist pos
+            msg = Twist()
+            msg.linear.z = float(0.5)
+            self.pub_motor_pos.publish(msg)
+            self.wait_motor_free()
+            print("end")
             pass
 
 
@@ -112,6 +154,23 @@ class ModeSelectorNode(Node):
             self.change_mode('to_avoidance')
         elif mode_num == '5':
             self.change_mode('avoidance')
+        elif mode_num == '6':
+            self.change_mode('to_parking')
+        elif mode_num == '7':
+            self.change_mode('approach_parking')
+
+
+    def wait_motor_free(self):
+        self.motor_busy = True
+        rclpy.spin_once(self, timeout_sec=0.001)
+        # self.executor.spin_once()
+        print("wait motor")
+
+
+    def on_receive_motor_status(self, msg: Int8):
+        if msg.data:
+            self.motor_busy = False
+        print("receive motor status")
 
 
     def print_menu(self):
@@ -122,6 +181,8 @@ class ModeSelectorNode(Node):
         print(f"3. fork_right")
         print(f"4. to_avoidance")
         print(f"5. avoidance")
+        print(f"6. to_parking")
+        print(f"7. approach_parking")
 
 
 

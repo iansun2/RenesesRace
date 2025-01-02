@@ -4,6 +4,7 @@ from dynamixel_sdk import *
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Int8
 import math as m
 
 motor_obj = None 
@@ -111,6 +112,7 @@ class MotorNode(Node):
             '/motor/pos',
             self.receive_motor_pos_callback,
             5)
+        self.pub_motor_status = self.create_publisher(Int8, '/motor/status', 5)
         ''' Car Struct '''
         self.wheel_radius = 0.0325 # meters
         self.wheel_dist = 0.162 # meters
@@ -169,6 +171,10 @@ class MotorNode(Node):
             time.sleep(dt)
             self.main_linear = 0
             self.set_target()
+        ## pub status
+        msg = Int8()
+        msg.data = 1
+        self.pub_motor_status.publish(msg)
 
 
     def set_target(self):

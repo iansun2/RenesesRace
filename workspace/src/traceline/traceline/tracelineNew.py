@@ -46,14 +46,15 @@ class TraceLineNode(Node):
             self.on_receive_cfg,
             5)
         self.bridge = CvBridge()
-        self.pub_mot = self.create_publisher(Twist, '/motor/main', 10)
+        self.pub_mot = self.create_publisher(Twist, '/motor/main', 1)
         '''  Config '''
-        self.enable = True
-        self.mode = 'dual'
-        self.mix_TMB = [0.3, 0.5, 0.2]
-        self.pid = [0.03, 0, 0]
+        self.enable = False
+        # self.mode = 'dual'
+        self.mode = 'left'
+        self.mix_TMB = [0.2, 0.5, 0.3]
+        self.pid = [0.02, 0, 0]
         self.speed = 0.1
-        self.ref = 0.33
+        self.ref = 0.18
         self.get_logger().info('init finish')
         ''' Variable '''
         self.fps_counter = 0
@@ -79,16 +80,22 @@ class TraceLineNode(Node):
 
     def receive_image_callback(self, msg):
         if not self.enable:
+            # send zero
+            msg = Twist()
+            self.pub_mot.publish(msg)
             return
         img = self.bridge.imgmsg_to_cv2(msg, 'bgr8')
         # cv2.imshow("receive", img)
+        ## get trace
         trace, debug_img = self.get_trace_value(img)
         trace_out = trace * self.pid[0]
         self.get_logger().info(f"trace_out: {trace_out}")
+        ## pub twist
         msg = Twist()
         msg.linear.z = float(self.speed)
         msg.angular.z = float(trace_out)
         self.pub_mot.publish(msg)
+        ## show img
         cv2.imshow("traceline", debug_img)
         cv2.waitKey(1)
         ''' fps '''
@@ -199,6 +206,7 @@ class TraceLineNode(Node):
         for p in road_edge_point_L:
             # print(f"L final p: {p}")
             cv2.circle(debug_frame, p, 2, (255, 0, 0), 2)
+            ## put point to it's section
             if p[1] > section[0]:
                 avg_L[0] += p[0]
                 avg_L_cnt[0] += 1
@@ -217,6 +225,7 @@ class TraceLineNode(Node):
         for p in road_edge_point_R:
             # print(f"R final p: {p}")
             cv2.circle(debug_frame, p, 2, (0, 255, 0), 2)
+            ## put point to it's section
             if p[1] > section[0]:
                 avg_R[0] += p[0]
                 avg_R_cnt[0] += 1
@@ -236,20 +245,25 @@ class TraceLineNode(Node):
         avg_R[2] /= avg_R_cnt[2] if avg_R_cnt[2] else 1
         # print(avg_R)
         ''' output '''
-        avg = []
+        avg_seg = [] # seg format
+        ref = h_middle
+        ## dual, combine LR
         if self.mode == 'dual':
-            ## combine LR
             for idx in range(len(avg_L)):
-                avg.append(int((avg_L[idx] + avg_R[idx]) / 2))
+                avg_seg.append(int((avg_L[idx] + avg_R[idx]) / 2))
+        ## left/right using value directly
         elif self.mode == 'left':
-            avg = avg_L
+            avg_seg = avg_L
+            ref = fsize[1] * self.ref - 1
         else:
-            avg = avg_R
-        avg = np.array(avg)
-        # cv2.circle(debug_frame, (avg[0], section[0] + 25), 2, (255, 255, 255), 2)
-        # cv2.circle(debug_frame, (avg[1], section[1] + 25), 2, (255, 255, 255), 2)
-        # cv2.circle(debug_frame, (avg[2], section[2] + 25), 2, (255, 255, 255), 2)
-        output_seg = h_middle - avg
+            avg_seg = avg_R
+            ref = fsize[1] * self.ref - 1
+        ## to numpy for calculation
+        avg_seg = np.array(avg_seg).astype(np.int32)
+        cv2.circle(debug_frame, (avg_seg[0], section[0] + 25), 2, (255, 255, 255), 2)
+        cv2.circle(debug_frame, (avg_seg[1], section[1] + 25), 2, (255, 255, 255), 2)
+        cv2.circle(debug_frame, (avg_seg[2], section[2] + 25), 2, (255, 255, 255), 2)
+        output_seg = ref - avg_seg
         output = output_seg[0] * self.mix_TMB[2] \
             + output_seg[1] * self.mix_TMB[1] \
             + output_seg[2] * self.mix_TMB[0]

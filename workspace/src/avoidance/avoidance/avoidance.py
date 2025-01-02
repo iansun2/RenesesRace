@@ -51,6 +51,9 @@ class AvoidanceNode(Node):
     def on_receive_scan(self, msg: LaserScan):
         # self.get_logger().info("scan receive")
         if not self.enable:
+            # send zero
+            msg = Twist()
+            self.pub_mot.publish(msg)
             return
         # self.get_logger().info(f"ang_min: {msg.angle_min}")
         # self.get_logger().info(f"ang_max: {msg.angle_max}")
@@ -59,11 +62,11 @@ class AvoidanceNode(Node):
         weighted_sum = 0
         weighted_value = []
         for idx in range(len(msg.ranges)):
-            # angle
+            # angle using -pi to +pi
             point_angle = msg.angle_increment * idx
             if point_angle > m.pi:
                 point_angle = -2 * m.pi + point_angle
-            # dist
+            # dist meters
             point_distance = msg.ranges[idx]
             weighted_value.append(0.0)
             # filt point
