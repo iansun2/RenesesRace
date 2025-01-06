@@ -4,6 +4,7 @@ from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 from std_msgs.msg import Int8
+from motor_interface.srv import MotorPos
 
 import numpy as np
 import cv2
@@ -21,11 +22,9 @@ class ModeSelectorNode(Node):
         self.rds = redis.Redis(host='localhost', port=6379, db=0)
         self.pub_trace_cfg = self.create_publisher(String, '/trace_cfg', 5)
         self.pub_avoidance_cfg = self.create_publisher(String, '/avoidance_cfg', 5)
-        self.pub_motor_pos = self.create_publisher(Twist, '/motor/pos', 5)
         self.sub_lidar = self.create_subscription(LaserScan, '/scan', self.on_receive_scan, 1)
         self.sub_mode = self.create_subscription(String, '/mode', self.on_set_mode, 5)
-        self.sub_motor_status = self.create_subscription(
-                                    Int8, '/motor/status', self.on_receive_motor_status, 5)
+        self.cli_motor_pos = self.create_client(MotorPos, '/motor/pos')
         ''' timer ''' 
         self.redis_timer = self.create_timer(0.03, self.redis_timer_callback)
         ''' parameter '''
@@ -41,6 +40,8 @@ class ModeSelectorNode(Node):
             self.get_logger().error(f"open mode_config.json failed: {e}")
         self.get_logger().info("init end")
         self.print_menu()
+        self.motor_pos(0.1, 0)
+        self.motor_pos(-0.1, 0)
 
 
     def redis_timer_callback(self):
@@ -131,11 +132,15 @@ class ModeSelectorNode(Node):
                 self.get_logger().info(f"park to: {self.park_dir}")
         ## after close enough to object
         elif self.current_mode == "parking":
-            ## pub twist pos
-            msg = Twist()
-            msg.linear.z = float(0.5)
-            self.pub_motor_pos.publish(msg)
-            self.wait_motor_free()
+            self.motor_pos(0.5, 0)
+            turn = 90
+            if self.park_dir == "L":
+                turn = -90
+            self.motor_pos(0, m.radians(turn))
+            self.motor_pos(-0.2, 0)
+            self.motor_pos(0.2, 0)
+            self.motor_pos(0, m.radians(turn))
+            self.motor_pos(0.5, 0)
             print("end")
             pass
 
@@ -160,17 +165,13 @@ class ModeSelectorNode(Node):
             self.change_mode('approach_parking')
 
 
-    def wait_motor_free(self):
-        self.motor_busy = True
-        rclpy.spin_once(self, timeout_sec=0.001)
-        # self.executor.spin_once()
-        print("wait motor")
-
-
-    def on_receive_motor_status(self, msg: Int8):
-        if msg.data:
-            self.motor_busy = False
-        print("receive motor status")
+    def motor_pos(self, linear: float, angular: float):
+        req = MotorPos.Request()
+        req.linear = float(linear)
+        req.angular = float(angular)
+        future = self.cli_motor_pos.call_async(req)
+        rclpy.spin_until_future_complete(self, future)
+        return future.result()
 
 
     def print_menu(self):

@@ -5,6 +5,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Int8
+from motor_interface.srv import MotorPos
 import math as m
 
 motor_obj = None 
@@ -107,12 +108,10 @@ class MotorNode(Node):
             '/motor/aux',
             self.receive_motor_aux_callback,
             1)
-        self.sub_motor_pos = self.create_subscription(
-            Twist,
-            '/motor/pos',
-            self.receive_motor_pos_callback,
-            5)
-        self.pub_motor_status = self.create_publisher(Int8, '/motor/status', 5)
+        self.srv_motor_pos = self.create_service(
+            MotorPos, 
+            '/motor/pos', 
+            self.motor_pos_callback)
         ''' Car Struct '''
         self.wheel_radius = 0.0325 # meters
         self.wheel_dist = 0.162 # meters
@@ -148,33 +147,38 @@ class MotorNode(Node):
         self.set_target()
 
 
-    def receive_motor_pos_callback(self, msg: Twist):
+    def motor_pos_callback(self, request, response):
         REF_LINEAR = 0.1 # m/s
-        REF_ANGULAR = 3 # rad/s
-        linear = msg.linear.z # m/s
-        angular = msg.angular.z # rad/s
+        REF_ANGULAR = 1 # rad/s
+        linear = request.linear # m/s
+        angular = request.angular # rad/s
         self.get_logger().info(f"twist pos: linear-> {linear}, angular-> {angular}")
         if linear and angular:
             self.get_logger().warn(f"twist pos input linear and angular at same time")
         self.aux_angular = self.main_angular = self.main_linear = 0
         if angular:
             dt = angular / REF_ANGULAR
-            self.main_angular = REF_ANGULAR
+            if dt >= 0:
+                self.main_angular = REF_ANGULAR
+            else:
+                self.main_angular = -REF_ANGULAR
             self.set_target()
-            time.sleep(dt)
+            time.sleep(abs(dt))
             self.main_angular = 0
             self.set_target()
         elif linear:
             dt = linear / REF_LINEAR
-            self.main_linear = REF_LINEAR
+            if dt >= 0:
+                self.main_linear = REF_LINEAR
+            else:
+                self.main_linear = -REF_LINEAR
             self.set_target()
-            time.sleep(dt)
+            time.sleep(abs(dt))
             self.main_linear = 0
             self.set_target()
         ## pub status
-        msg = Int8()
-        msg.data = 1
-        self.pub_motor_status.publish(msg)
+        response.result = 1
+        return response
 
 
     def set_target(self):
