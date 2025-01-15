@@ -4,7 +4,7 @@ from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 from std_msgs.msg import Int8
-from motor_interface.srv import MotorPos
+from motor_if.srv import MotorPos
 
 import numpy as np
 import cv2

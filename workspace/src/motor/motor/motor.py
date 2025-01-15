@@ -5,7 +5,7 @@ import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Int8
-from motor_interface.srv import MotorPos
+from motor_if.srv import MotorPos
 import math as m
 
 motor_obj = None 
