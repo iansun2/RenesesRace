@@ -21,20 +21,31 @@
         },
         "avoidance": {
             "en"    : false
-        }
+        },
+        "end_cond"  : {
+            "stop"      : "to_fork"
+        },
+        "pre_wait"  : 0
     },
+
     "to_fork_cfg": {
         "trace": {
             "en"        : true,
             "mode"      : "dual",
             "mix_TMB"   : [0.3, 0.5, 0.2],
-            "pid"       : [0.03, 0, 0],
+            "pid"       : [0.02, 0, 0],
             "speed"     : 0.15
         },
         "avoidance": {
             "en"    : false
-        }
+        },
+        "end_cond"  : {
+            "left"      : "fork_left",
+            "right"     : "fork_right"
+        },
+        "pre_wait"  : 0
     },
+
     "fork_left_cfg": {
         "trace": {
             "en"        : true,
@@ -42,12 +53,17 @@
             "mix_TMB"   : [0.3, 0.5, 0.2],
             "ref"       : 0.33,
             "pid"       : [0.03, 0, 0],
-            "speed"     : 0.15
+            "speed"     : 0.10
         },
         "avoidance": {
             "en"    : false
-        }
+        },
+        "end_cond"  : {
+            "cross"      : "to_avoidance"
+        },
+        "pre_wait"  : 0
     },
+
     "fork_right_cfg": {
         "trace": {
             "en"        : true,
@@ -55,11 +71,15 @@
             "mix_TMB"   : [0.3, 0.5, 0.2],
             "ref"       : 0.66,
             "pid"       : [0.03, 0, 0],
-            "speed"     : 0.15
+            "speed"     : 0.10
         },
         "avoidance": {
             "en"    : false
-        }
+        },
+        "end_cond"  : {
+            "cross"      : "to_avoidance"
+        },
+        "pre_wait"  : 0
     },
 
     "to_avoidance_cfg": {
@@ -72,8 +92,13 @@
         },
         "avoidance": {
             "en"    : false
-        }
+        },
+        "end_cond"  : {
+            "avoidance" : "avoidance"
+        },
+        "pre_wait"  : 5
     },
+
     "avoidance_cfg": {
         "trace": {
             "en"        : true,
@@ -88,22 +113,14 @@
             "weight_min"    : 0.1,
             "distance"      : 0.4,
             "distance_kp"   : 0.1
-        }
+        },
+        "end_cond"  : {
+            "park" : "to_parking"
+        },
+        "pre_wait"  : 0
     },
 
     "to_parking_cfg": {
-        "trace": {
-            "en"        : true,
-            "mode"      : "dual",
-            "mix_TMB"   : [0.3, 0.5, 0.2],
-            "pid"       : [0.03, 0, 0],
-            "speed"     : 0.15
-        },
-        "avoidance": {
-            "en"    : false
-        }
-    },
-    "approach_parking_cfg": {
         "trace": {
             "en"        : true,
             "mode"      : "left",
@@ -114,14 +131,19 @@
         },
         "avoidance": {
             "en"    : false
-        }
+        },
+        "end_cond"  : {},
+        "pre_wait"  : 0
     },
+
     "parking_cfg": {
         "trace": {
             "en"    : false
         },
         "avoidance": {
             "en"    : false
-        }
+        },
+        "end_cond"  : {},
+        "pre_wait"  : 0
     }
 }

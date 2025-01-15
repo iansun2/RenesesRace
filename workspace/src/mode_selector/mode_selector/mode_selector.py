@@ -39,12 +39,13 @@ class ModeSelectorNode(Node):
         self.sub_mode = self.create_subscription(String, '/mode', self.on_set_mode, 5)
         self.cli_motor_pos = self.create_client(MotorPos, '/motor/pos')
         ''' timer ''' 
-        self.redis_timer = self.create_timer(0.03, self.redis_timer_callback)
+        self.redis_timer = self.create_timer(0.1, self.redis_timer_callback)
         ''' parameter '''
         ''' variable '''
         self.yolo_filter = []
         self.last_yolo_result_idx = -1
-        self.current_mode = 'init'
+        self.current_mode = 'boot'
+        self.end_cond = {}
         try:
             file = open('mode_config.json', 'r')
             self.cfg_json = json.load(file)
@@ -52,9 +53,10 @@ class ModeSelectorNode(Node):
         except Exception as e:
             self.get_logger().error(f"open mode_config.json failed: {e}")
         self.get_logger().info("init end")
+        self.change_mode("init")
         self.print_menu()
-        self.motor_pos(0.1, 0)
-        self.motor_pos(-0.1, 0)
+        # self.motor_pos(0.1, 0)
+        # self.motor_pos(-0.1, 0)
 
 
     def redis_timer_callback(self):
@@ -73,23 +75,25 @@ class ModeSelectorNode(Node):
                 yolo_result = yolo_result['detect']
                 for result in yolo_result:
                     prob = result['prob']
-                    label = result['label']
+                    c_idx = result['c_idx']
                     center_x = result['center_x']
                     center_y = result['center_y']
                     box_w = result['box_w']
                     box_h = result['box_h']
                     # first filter
-                    if prob > 80 and box_w > 100 and box_h > 100:
-                        self.yolo_filter.append(label)
+                    if prob > 0.4 and box_w * box_h > 6000:
+                        self.yolo_filter.append(c_idx)
             # end when no new result
             else:
                 return
         ''' filter '''
         filter_set = set(self.yolo_filter)
-        for label in filter_set:
+        for c_idx in filter_set:
             # yolo filter label count enougth
-            if self.yolo_filter.count(label) > 3:
-                self.change_mode(label)
+            if self.yolo_filter.count(c_idx) > 3:
+                self.get_logger().info(f"confirm sign: {class_name[c_idx]}")
+                if class_name[c_idx] in self.end_cond:
+                    self.change_mode(self.end_cond[class_name[c_idx]])
                 self.yolo_filter = []
 
 
@@ -109,11 +113,13 @@ class ModeSelectorNode(Node):
         msg = String()
         msg.data = json.dumps(config["avoidance"])
         self.pub_avoidance_cfg.publish(msg)
+        ## end cond
+        self.end_cond = config["end_cond"]
+        ## pre wait
+        time.sleep(config["pre_wait"])
 
 
     def on_receive_scan(self, msg: LaserScan):
-        print("aa")
-        self.wait_motor_free()
         FRONT_ANGLE = 0
         LOCK_DIST = 0.5 # meters
         LOCK_FOV = m.radians(120) / 2 # write fov in ()

@@ -11,7 +11,7 @@ class AvoidanceNode(Node):
         super().__init__('avoidance_node')
         self.get_logger().info("init start")
         ''' config '''
-        self.enable = True
+        self.enable = False
         # angle of head(front)
         self.head_position = m.radians(0)
         # avoidance fov (half)
