@@ -46,7 +46,7 @@ class USBCameraRGBNode(Node):
             self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 3) # auto expos
             time.sleep(3)
             self.cap.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1) # manual expos
-            self.cap.set(cv2.CAP_PROP_EXPOSURE, 10)
+            self.cap.set(cv2.CAP_PROP_EXPOSURE, 50)
             self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
             self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
             self.cap.set(cv2.CAP_PROP_CONVERT_RGB, 1)
@@ -77,7 +77,8 @@ class USBCameraRGBNode(Node):
             # cv2.imshow("img", img)
             ''' redis '''
             # self.pipe.set('img', img.tostring())
-            self.pipe.set('img_jpg', cv2.imencode(".jpg", img))
+            result, img_jpg = cv2.imencode(".jpg", img)
+            self.pipe.set('img_jpg', img_jpg.tostring())
             self.pipe.set('img_idx', self.frame_id)
             self.pipe.set('img_shape', str(img.shape[0]) + " " + str(img.shape[1]))
             self.pipe.execute()

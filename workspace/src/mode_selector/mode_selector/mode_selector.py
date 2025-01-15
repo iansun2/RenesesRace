@@ -14,6 +14,19 @@ import json
 import math as m
 
 
+class_name = [
+    'fork',
+    'cross',
+    'right',
+    'park',
+    'left?',
+    'avoidance',
+    '6',
+    '7',
+    'stop'
+    ]
+
+
 class ModeSelectorNode(Node):
     def __init__(self):
         super().__init__('mode_selector_node')
