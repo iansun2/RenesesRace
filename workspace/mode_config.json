@@ -32,8 +32,8 @@
         "trace": {
             "en"        : true,
             "mode"      : "dual",
-            "mix_TMB"   : [0.3, 0.5, 0.2],
-            "pid"       : [0.02, 0, 0],
+            "mix_TMB"   : [0.2, 0.3, 0.5],
+            "pid"       : [0.03, 0, 0],
             "speed"     : 0.15
         },
         "avoidance": {
@@ -68,9 +68,9 @@
         "trace": {
             "en"        : true,
             "mode"      : "right",
-            "mix_TMB"   : [0.3, 0.5, 0.2],
-            "ref"       : 0.66,
-            "pid"       : [0.03, 0, 0],
+            "mix_TMB"   : [0.2, 0.2, 0.6],
+            "ref"       : 0.85,
+            "pid"       : [0.02, 0, 0],
             "speed"     : 0.10
         },
         "avoidance": {
@@ -86,7 +86,7 @@
         "trace": {
             "en"        : true,
             "mode"      : "dual",
-            "mix_TMB"   : [0.3, 0.5, 0.2],
+            "mix_TMB"   : [0.2, 0.5, 0.3],
             "pid"       : [0.03, 0, 0],
             "speed"     : 0.15
         },

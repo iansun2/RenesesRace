@@ -49,12 +49,12 @@ class TraceLineNode(Node):
         self.pub_mot = self.create_publisher(Twist, '/motor/main', 1)
         '''  Config '''
         self.enable = False
-        # self.mode = 'dual'
-        self.mode = 'left'
+        self.mode = 'dual'
+        # self.mode = 'right'
         self.mix_TMB = [0.2, 0.5, 0.3]
-        self.pid = [0.02, 0, 0]
-        self.speed = 0.1
-        self.ref = 0.18
+        self.pid = [0.03, 0, 0]
+        self.speed = 0.15
+        self.ref = 0.85
         self.get_logger().info('init finish')
         ''' Variable '''
         self.fps_counter = 0

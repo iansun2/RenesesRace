@@ -81,7 +81,7 @@ class ModeSelectorNode(Node):
                     box_w = result['box_w']
                     box_h = result['box_h']
                     # first filter
-                    if prob > 0.4 and box_w * box_h > 6000:
+                    if prob > 0.4 and box_w * box_h > 5000:
                         self.yolo_filter.append(c_idx)
             # end when no new result
             else:
@@ -90,7 +90,7 @@ class ModeSelectorNode(Node):
         filter_set = set(self.yolo_filter)
         for c_idx in filter_set:
             # yolo filter label count enougth
-            if self.yolo_filter.count(c_idx) > 3:
+            if self.yolo_filter.count(c_idx) > 1:
                 self.get_logger().info(f"confirm sign: {class_name[c_idx]}")
                 if class_name[c_idx] in self.end_cond:
                     self.change_mode(self.end_cond[class_name[c_idx]])
