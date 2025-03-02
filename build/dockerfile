@@ -15,7 +15,8 @@ RUN apt install -y vim wget git python3-pip gpg tmux
 # COPY scripts/start-vscode.sh /root/start-vscode.sh
 
 
-COPY scripts/start_code* /root/
+# COPY scripts/start_code* /root/
+RUN apt install -y tf_transformations
 RUN pip install dynamixel_sdk
 
 
