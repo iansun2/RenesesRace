@@ -3,14 +3,16 @@ import time
 from dynamixel_sdk import *
 import rclpy
 from rclpy.node import Node
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Quaternion
 from std_msgs.msg import Int8
-from motor_interface.srv import MotorPos
+from motor_if.srv import MotorPos
 import math as m
 import numpy as np
 from nav_msgs.msg import Odometry
 import tf2_ros 
+## sudo apt install ros-$ROSDISTRO-tf-transformations
 from tf_transformations import quaternion_from_euler
+import ctypes
 
 motor_obj = None 
 
@@ -99,12 +101,12 @@ class Motor2Wheel(UsbDevice):
             return: list[m1, m2]
         '''
         ret_vel = [0.0] * 2
-        m1_vel_raw, comm_result, error = self.packetHandler.read4ByteTxRx(self.portHandler, self.m1_id, 112)
+        m1_vel_raw, comm_result, error = self.packetHandler.read4ByteTxRx(self.portHandler, self.m1_id, 128)
         if(not self.has_error(comm_result, error)):
-            ret_vel[0] = m1_vel_raw * 0.229
-        m2_vel_raw, comm_result, error = self.packetHandler.read4ByteTxRx(self.portHandler, self.m2_id, 112)
+            ret_vel[0] = ctypes.c_int32(m1_vel_raw).value * 0.229
+        m2_vel_raw, comm_result, error = self.packetHandler.read4ByteTxRx(self.portHandler, self.m2_id, 128)
         if(not self.has_error(comm_result, error)):
-            ret_vel[1] = m2_vel_raw * 0.229
+            ret_vel[1] = ctypes.c_int32(m2_vel_raw).value * 0.229
         return ret_vel
 
 
@@ -151,8 +153,8 @@ class MotorNode(Node):
         self.get_logger().info("init finish")
         ''' Odom '''
         self.odom_last_time = 0
-        self.last_vel = np.array([0, 0]) # L, R
-        self.odom_xy = np.array([0, 0]) # x, y
+        self.last_vel = np.array([0, 0], dtype=np.float32) # L, R
+        self.odom_xy = np.array([0, 0], dtype=np.float32) # x, y
         self.odom_theta = 0
         self.odom_timer = self.create_timer(0.01, self.odom_timer_callback)
         ''' debug '''
@@ -229,37 +231,47 @@ class MotorNode(Node):
         self.odom_last_time = time.time()
         ## get linear vel (m/s)
         vel_rpm = self.motor.get_speed()
+        # self.get_logger().info(f'vel_rpm: {vel_rpm}')
         vel = np.array(vel_rpm) / 60.0 * self.wheel_perimeter
         avg_vel = (vel + self.last_vel) / 2
         ## get delta distance
         delta_distance_lr = avg_vel * dt
+        # print(f"ddlr: {delta_distance_lr}")
         delta_distance_ref = (delta_distance_lr[0] + delta_distance_lr[1]) * 0.5
+        # print(f"ddref: {delta_distance_ref}")
         ## odom (seq is matter)
-        delta_theta = (delta_distance_ref[1] - delta_distance_ref[1]) / self.wheel_dist
+        delta_theta = (delta_distance_lr[1] - delta_distance_lr[0]) / self.wheel_dist
+        # print(f"dtheta: {delta_theta}")
         self.odom_xy[0] +=  delta_distance_ref * m.cos(self.odom_theta + delta_theta / 2)
         self.odom_xy[1] +=  delta_distance_ref * m.sin(self.odom_theta + delta_theta / 2)
+        # print(f"odom_xy: {self.odom_xy}")
         self.odom_theta += delta_theta
         ## update last
         self.last_vel = vel
         ## publish
         msg = Odometry()
         msg.header.frame_id = 'odom'
-        msg.header.stamp = self.get_clock().now()
+        msg.header.stamp = self.get_clock().now().to_msg()
         msg.child_frame_id = 'base_link'
         msg.pose.pose.position.x = float(self.odom_xy[0])
         msg.pose.pose.position.y = float(self.odom_xy[1])
         msg.pose.pose.position.z = 0.0
-        msg.pose.pose.orientation = quaternion_from_euler(0, 0, self.odom_theta)
-        msg.twist.twist.angular.z = avg_vel * 2 * m.pi / self.wheel_dist
+        q_raw = quaternion_from_euler(0, 0, self.odom_theta)
+        quat = Quaternion()
+        quat.x = q_raw[0]
+        quat.y = q_raw[1]
+        quat.z = q_raw[2]
+        quat.w = q_raw[3]
+        msg.pose.pose.orientation = quat
+        msg.twist.twist.angular.z = delta_theta / self.wheel_dist
+        msg.twist.twist.linear.x = delta_distance_ref / self.wheel_dist
         self.pub_odom.publish(msg)
 
 def main(args=None):
     rclpy.init(args=args)
     motor_node = MotorNode()
-    try:
-        rclpy.spin(motor_node)
-    except:
-        motor_obj.set_speed(0, 0)
+    rclpy.spin(motor_node)
+    motor_obj.set_speed(0, 0)
     rclpy.shutdown()
 
 
