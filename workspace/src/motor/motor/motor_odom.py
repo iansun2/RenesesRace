@@ -258,17 +258,10 @@ class MotorNode(Node):
         msg.pose.pose.position.z = 0.0
         q_raw = quaternion_from_euler(0, 0, self.odom_theta)
         quat = Quaternion()
-<<<<<<< HEAD
-        quat.w = q_raw[0]
-        quat.x = q_raw[1]
-        quat.y = q_raw[2]
-        quat.z = q_raw[3]
-=======
         quat.x = q_raw[0]
         quat.y = q_raw[1]
         quat.z = q_raw[2]
         quat.w = q_raw[3]
->>>>>>> 77e7d37dd2372e057181045bc613746862bfe0a0
         msg.pose.pose.orientation = quat
         msg.twist.twist.angular.z = delta_theta / self.wheel_dist
         msg.twist.twist.linear.x = delta_distance_ref / self.wheel_dist

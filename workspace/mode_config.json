@@ -22,10 +22,15 @@
         "avoidance": {
             "en"    : false
         },
-        "end_cond"  : {
-            "stop"      : "to_fork"
+        "start": {
+            "wait"  : 0
         },
-        "pre_wait"  : 0
+        "end"  : {
+            "cond"  : [
+                ["time", 0, "to_fork"]
+            ],
+            "wait"  : 0
+        }
     },
 
     "to_fork_cfg": {
@@ -39,11 +44,16 @@
         "avoidance": {
             "en"    : false
         },
-        "end_cond"  : {
-            "left"      : "fork_left",
-            "right"     : "fork_right"
+        "start": {
+            "wait"  : 0
         },
-        "pre_wait"  : 0
+        "end"  : {
+            "cond"  : [
+                ["sign", "left", "fork_left"],
+                ["sign", "right", "fork_right"]
+            ],
+            "wait"  : 0
+        }
     },
 
     "fork_left_cfg": {
@@ -58,10 +68,15 @@
         "avoidance": {
             "en"    : false
         },
-        "end_cond"  : {
-            "cross"      : "to_avoidance"
+        "start": {
+            "wait"  : 0
         },
-        "pre_wait"  : 0
+        "end"  : {
+            "cond"  : [
+                ["time", 10, "to_avoidance"]
+            ],
+            "wait"  : 0
+        }
     },
 
     "fork_right_cfg": {
@@ -76,10 +91,15 @@
         "avoidance": {
             "en"    : false
         },
-        "end_cond"  : {
-            "cross"      : "to_avoidance"
+        "start": {
+            "wait"  : 0
         },
-        "pre_wait"  : 0
+        "end"  : {
+            "cond"  : [
+                ["time", 10, "to_avoidance"]
+            ],
+            "wait"  : 0
+        }
     },
 
     "to_avoidance_cfg": {
@@ -93,10 +113,15 @@
         "avoidance": {
             "en"    : false
         },
-        "end_cond"  : {
-            "avoidance" : "avoidance"
+        "start": {
+            "wait"  : 0
         },
-        "pre_wait"  : 5
+        "end"  : {
+            "cond"  : [
+                ["sign", "avoidance", "avoidance"]
+            ],
+            "wait"  : 0
+        }
     },
 
     "avoidance_cfg": {
@@ -114,10 +139,15 @@
             "distance"      : 0.4,
             "distance_kp"   : 0.1
         },
-        "end_cond"  : {
-            "park" : "to_parking"
+        "start": {
+            "wait"  : 0
         },
-        "pre_wait"  : 0
+        "end"  : {
+            "cond"  : [
+                ["sign", "park", "to_parking"]
+            ],
+            "wait"  : 0
+        }
     },
 
     "to_parking_cfg": {
@@ -132,8 +162,15 @@
         "avoidance": {
             "en"    : false
         },
-        "end_cond"  : {},
-        "pre_wait"  : 0
+        "start": {
+            "wait"  : 0
+        },
+        "end"  : {
+            "cond"  : [
+                ["time", 5, "parking"]
+            ],
+            "wait"  : 0
+        }
     },
 
     "parking_cfg": {
@@ -143,7 +180,103 @@
         "avoidance": {
             "en"    : false
         },
-        "end_cond"  : {},
-        "pre_wait"  : 0
+        "start": {
+            "wait"  : 0
+        },
+        "end"  : {
+            "cond"  : [
+                ["time", 0, "leave_parking"]
+            ],
+            "wait"  : 0
+        }
+    },
+
+    "leave_parking_cfg": {
+        "trace": {
+            "en"        : true,
+            "mode"      : "left",
+            "mix_TMB"   : [0.3, 0.5, 0.2],
+            "ref"       : 0.33,
+            "pid"       : [0.03, 0, 0],
+            "speed"     : 0.10
+        },
+        "avoidance": {
+            "en"    : false
+        },
+        "start": {
+            "wait"  : 0
+        },
+        "end"  : {
+            "cond"  : [
+                ["sign", "left", "to_fence"]
+            ],
+            "wait"  : 0
+        }
+    },
+
+    "to_fence_cfg": {
+        "trace": {
+            "en"        : true,
+            "mode"      : "dual",
+            "mix_TMB"   : [0.2, 0.5, 0.3],
+            "pid"       : [0.03, 0, 0],
+            "speed"     : 0.15
+        },
+        "avoidance": {
+            "en"    : false
+        },
+        "start": {
+            "wait"  : 5
+        },
+        "end"  : {
+            "cond"  : [
+                ["sign", "fence_down", "fence"]
+            ],
+            "wait"  : 0
+        }
+    },
+
+    "fence_cfg": {
+        "trace": {
+            "en"        : true,
+            "mode"      : "dual",
+            "mix_TMB"   : [0.2, 0.5, 0.3],
+            "pid"       : [0.03, 0, 0],
+            "speed"     : 0.15
+        },
+        "avoidance": {
+            "en"    : false
+        },
+        "start": {
+            "wait"  : 0
+        },
+        "end"  : {
+            "cond"  : [
+                ["sign", "fence_up", "to_slam"]
+            ],
+            "wait"  : 0
+        }
+    },
+
+    "to_slam_cfg": {
+        "trace": {
+            "en"        : true,
+            "mode"      : "dual",
+            "mix_TMB"   : [0.2, 0.5, 0.3],
+            "pid"       : [0.03, 0, 0],
+            "speed"     : 0.15
+        },
+        "avoidance": {
+            "en"    : false
+        },
+        "start": {
+            "wait"  : 0
+        },
+        "end"  : {
+            "cond"  : [
+                ["time", 5, "end"]
+            ],
+            "wait"  : 0
+        }
     }
 }
