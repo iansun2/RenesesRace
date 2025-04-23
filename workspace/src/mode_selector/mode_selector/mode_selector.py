@@ -39,13 +39,14 @@ class ModeSelectorNode(Node):
         self.sub_mode = self.create_subscription(String, '/mode', self.on_set_mode, 5)
         self.cli_motor_pos = self.create_client(MotorPos, '/motor/pos')
         ''' timer ''' 
-        self.redis_timer = self.create_timer(0.1, self.redis_timer_callback)
+        self.loop_timer = self.create_timer(0.1, self.loop_timer_callback)
         ''' parameter '''
         ''' variable '''
         self.yolo_filter = []
         self.last_yolo_result_idx = -1
         self.current_mode = 'boot'
-        self.end_cond = {}
+        self.end_cfg = {}
+        self.start_time = time.time()
         try:
             file = open('mode_config.json', 'r')
             self.cfg_json = json.load(file)
@@ -59,12 +60,14 @@ class ModeSelectorNode(Node):
         # self.motor_pos(-0.1, 0)
 
 
-    def redis_timer_callback(self):
+    def loop_timer_callback(self):
+        ## Redis
         new_result = False
+        yolo_filted = ""
         ''' try receive yolo result '''
         yolo_result = self.rds.get('yolo_detect')
         yolo_result_idx = self.rds.get('yolo_detect_idx')
-        # not None check
+        # redis result not None check
         if yolo_result is not None and yolo_result_idx is not None:
             # new result
             if yolo_result_idx != self.last_yolo_result_idx:
@@ -90,11 +93,23 @@ class ModeSelectorNode(Node):
         filter_set = set(self.yolo_filter)
         for c_idx in filter_set:
             # yolo filter label count enougth
-            if self.yolo_filter.count(c_idx) > 1:
+            if self.yolo_filter.count(c_idx) > 3:
                 self.get_logger().info(f"confirm sign: {class_name[c_idx]}")
-                if class_name[c_idx] in self.end_cond:
-                    self.change_mode(self.end_cond[class_name[c_idx]])
-                self.yolo_filter = []
+                yolo_filted = class_name[c_idx]
+                break
+        ## clear variable
+        self.yolo_filter = []
+        ''' end check '''
+        for end_cond in self.end_cfg["cond"]:
+            ## check if cond is sign
+            if end_cond[0] == "sign":
+                ## match cond isgn
+                if yolo_filted == end_cond[1]:
+                    self.change_mode(end_cond[2])
+            elif end_cond[0] == "time":
+                ## reach end time
+                if time.time() - self.start_time >= end_cond[1]:
+                    self.change_mode(end_cond[2])
 
 
     def change_mode(self, mode: str):
@@ -103,8 +118,14 @@ class ModeSelectorNode(Node):
             return
         ''' mode change '''
         self.get_logger().info(f"from mode: {self.current_mode} to {mode}")
+        ## update mode, clear variable
         self.current_mode = mode
         config = self.cfg_json[mode + '_cfg']
+        self.end_cfg = {}
+        ## start config
+        start_cfg = config["start"]
+        ## start wait
+        time.sleep(start_cfg["wait"])
         ## trace
         msg = String()
         msg.data = json.dumps(config["trace"])
@@ -113,10 +134,10 @@ class ModeSelectorNode(Node):
         msg = String()
         msg.data = json.dumps(config["avoidance"])
         self.pub_avoidance_cfg.publish(msg)
-        ## end cond
-        self.end_cond = config["end_cond"]
-        ## pre wait
-        time.sleep(config["pre_wait"])
+        ## start time
+        self.start_time = time.time()
+        ## end config
+        self.end_cfg = config["end"]
 
 
     def on_receive_scan(self, msg: LaserScan):
