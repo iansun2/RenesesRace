@@ -90,7 +90,7 @@ class AvoidanceNode(Node):
         ## for debug
         msg.ranges = weighted_value
         self.pub_debug.publish(msg)
-        ## to motor
+        ## send to motor
         msg = Twist()
         msg.angular.z = float(final_output)
         self.pub_mot.publish(msg)

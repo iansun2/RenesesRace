@@ -132,7 +132,7 @@ class MotorNode(Node):
 
 
     def receive_motor_main_callback(self, msg: Twist):
-        linear = msg.linear.z # m/s
+        linear = msg.linear.x # m/s
         angular = msg.angular.z # rad/s
         self.get_logger().info(f"twist main: linear-> {linear}, angular-> {angular}")
         self.main_linear = linear

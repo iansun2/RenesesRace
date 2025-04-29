@@ -92,7 +92,7 @@ class TraceLineNode(Node):
         self.get_logger().info(f"trace_out: {trace_out}")
         ## pub twist
         msg = Twist()
-        msg.linear.z = float(self.speed)
+        msg.linear.x = float(self.speed)
         msg.angular.z = float(trace_out)
         self.pub_mot.publish(msg)
         ## show img
