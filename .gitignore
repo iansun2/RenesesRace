@@ -8,3 +8,4 @@
 /config/code-server-config.yaml
 
 *.pyc
+/host_app/yolox_cam
