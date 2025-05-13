@@ -164,7 +164,7 @@ class MotorNode(Node):
 
 
     def receive_motor_main_callback(self, msg: Twist):
-        linear = msg.linear.z # m/s
+        linear = msg.linear.x # m/s
         angular = msg.angular.z # rad/s
         self.get_logger().info(f"twist main: linear-> {linear}, angular-> {angular}")
         self.main_linear = linear
@@ -252,14 +252,15 @@ class MotorNode(Node):
         ## update last
         self.last_vel = vel
         ## publish
+        x = float(self.odom_xy[0])
+        y = float(self.odom_xy[1])
+        q_raw = quaternion_from_euler(0, 0, self.odom_theta)
         msg = Odometry()
         msg.header.frame_id = 'odom'
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.child_frame_id = 'base_link'
-        msg.pose.pose.position.x = -float(self.odom_xy[0])
-        msg.pose.pose.position.y = float(self.odom_xy[1])
-        msg.pose.pose.position.z = 0.0
-        q_raw = quaternion_from_euler(0, 0, self.odom_theta)
+        msg.pose.pose.position.x = x
+        msg.pose.pose.position.y = y
         quat = Quaternion()
         quat.x = q_raw[0]
         quat.y = q_raw[1]
@@ -274,10 +275,9 @@ class MotorNode(Node):
         tf.header.stamp = self.get_clock().now().to_msg()
         tf.header.frame_id = 'odom'
         tf.child_frame_id = 'base_link'
-        tf.transform.rotation.w = 1.0
-        tf.transform.rotation.x = 0.0
-        tf.transform.rotation.y = 0.0
-        tf.transform.rotation.z = 0.0
+        tf.transform.translation.x = x
+        tf.transform.translation.y = y
+        tf.transform.rotation = quat
         self.tf_broadcaster.sendTransform(tf)
 
 def main(args=None):
