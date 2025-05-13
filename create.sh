@@ -15,11 +15,10 @@ docker run -it -d --name ros2 \
     -v $XDG_RUNTIME_DIR/wayland-1:/tmp/wayland-1 \
 	-e QT_QPA_PLATFORM=wayland \
     -v ${DIR}/workspace:/root/workspace \
-    -v ${DIR}/user_data/pip-packages:/usr/local/lib/python3.10/dist-packages \
-    -v ${DIR}/user_data/local:/root/.local \
-    -v ${DIR}/config/code-server-config.yaml:/root/.config/code-server/config.yaml:ro \
     ros2_dev
 
+    # -v ${DIR}/user_data/pip-packages:/usr/local/lib/python3.10/dist-packages \
+    # -v ${DIR}/user_data/local:/root/.local \
 
 docker run -it -d --name redis \
     --net=host \

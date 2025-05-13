@@ -2,7 +2,7 @@ FROM arm64v8/ros:humble-perception
 
 RUN apt update
 RUN apt install -y qtwayland5 ros-humble-rqt curl
-RUN curl -fsSL https://code-server.dev/install.sh | sh
+# RUN curl -fsSL https://code-server.dev/install.sh | sh
 RUN apt install -y vim wget git python3-pip gpg tmux
 # # add microsoft gpg
 # RUN wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg \
@@ -16,8 +16,8 @@ RUN apt install -y vim wget git python3-pip gpg tmux
 
 
 # COPY scripts/start_code* /root/
-RUN apt install -y tf_transformations
-RUN pip install dynamixel_sdk
+RUN apt install -y ros-humble-tf-transformations
+RUN pip install dynamixel_sdk redis
 
 
 CMD ["/bin/bash"]
