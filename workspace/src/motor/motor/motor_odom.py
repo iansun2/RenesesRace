@@ -13,6 +13,8 @@ import tf2_ros
 ## sudo apt install ros-$ROSDISTRO-tf-transformations
 from tf_transformations import quaternion_from_euler
 import ctypes
+from tf2_ros import StaticTransformBroadcaster
+from geometry_msgs.msg import TransformStamped
 
 motor_obj = None 
 
@@ -134,6 +136,7 @@ class MotorNode(Node):
             '/odom',
             1
         )
+        self.tf_broadcaster = StaticTransformBroadcaster(self)
         ''' Car Struct '''
         self.wheel_radius = 0.0325 # meters
         self.wheel_dist = 0.162 # meters
@@ -253,7 +256,7 @@ class MotorNode(Node):
         msg.header.frame_id = 'odom'
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.child_frame_id = 'base_link'
-        msg.pose.pose.position.x = float(self.odom_xy[0])
+        msg.pose.pose.position.x = -float(self.odom_xy[0])
         msg.pose.pose.position.y = float(self.odom_xy[1])
         msg.pose.pose.position.z = 0.0
         q_raw = quaternion_from_euler(0, 0, self.odom_theta)
@@ -266,6 +269,16 @@ class MotorNode(Node):
         msg.twist.twist.angular.z = delta_theta / self.wheel_dist
         msg.twist.twist.linear.x = delta_distance_ref / self.wheel_dist
         self.pub_odom.publish(msg)
+        ## tf
+        tf = TransformStamped()
+        tf.header.stamp = self.get_clock().now().to_msg()
+        tf.header.frame_id = 'odom'
+        tf.child_frame_id = 'base_link'
+        tf.transform.rotation.w = 1.0
+        tf.transform.rotation.x = 0.0
+        tf.transform.rotation.y = 0.0
+        tf.transform.rotation.z = 0.0
+        self.tf_broadcaster.sendTransform(tf)
 
 def main(args=None):
     rclpy.init(args=args)
