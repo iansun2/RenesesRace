@@ -76,7 +76,7 @@ class USBCameraRGBNode(Node):
             # dt.append([dt[-1][0] + 1, time.time()])
             # cv2.imshow("img", img)
             ''' redis '''
-            # self.pipe.set('img', img.tostring())
+            self.pipe.set('img', img.tostring())
             result, img_jpg = cv2.imencode(".jpg", img)
             self.pipe.set('img_jpg', img_jpg.tostring())
             self.pipe.set('img_idx', self.frame_id)
